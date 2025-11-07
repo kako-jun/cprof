@@ -11,12 +11,21 @@ interface ColorSpaceViewerProps {
   profileName?: string
   colorPoints2?: ColorPoint[]
   profileName2?: string
+  gradientMode?: boolean
 }
 
 /**
  * 色空間の点を3Dで表示するコンポーネント
  */
-function ColorPoints({ points, opacity = 1, showLabels = true }: { points: ColorPoint[]; opacity?: number; showLabels?: boolean }) {
+function ColorPoints({
+  points,
+  opacity = 1,
+  showLabels = true,
+}: {
+  points: ColorPoint[]
+  opacity?: number
+  showLabels?: boolean
+}) {
   return (
     <>
       {points.map((point, index) => (
@@ -59,9 +68,103 @@ function ColorPoints({ points, opacity = 1, showLabels = true }: { points: Color
 }
 
 /**
+ * グラデーション着色された色立体を表示
+ */
+function ColorGamutSolid({ points, opacity = 0.8 }: { points: ColorPoint[]; opacity?: number }) {
+  if (points.length < 8) return null
+
+  const red = points[0]
+  const green = points[1]
+  const blue = points[2]
+  const black = points[7]
+
+  // RGB色空間を表現する三角錐のジオメトリを作成
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry()
+
+    // 頂点座標
+    const vertices = new Float32Array([
+      // 三角錐の底面（黒）
+      black.x,
+      black.y,
+      black.z,
+
+      // 三角錐の頂点（R, G, B）
+      red.x,
+      red.y,
+      red.z,
+      green.x,
+      green.y,
+      green.z,
+      blue.x,
+      blue.y,
+      blue.z,
+    ])
+
+    // 三角形の面を定義
+    const indices = new Uint16Array([
+      // 底面から各頂点への3つの面
+      0,
+      1,
+      2, // 黒 -> 赤 -> 緑
+      0,
+      2,
+      3, // 黒 -> 緑 -> 青
+      0,
+      3,
+      1, // 黒 -> 青 -> 赤
+      // 上面（RGB三角形）
+      1,
+      3,
+      2, // 赤 -> 青 -> 緑
+    ])
+
+    // 頂点カラー（各頂点の色）
+    const colors = new Float32Array([
+      // 黒
+      0, 0, 0,
+      // 赤
+      1, 0, 0,
+      // 緑
+      0, 1, 0,
+      // 青
+      0, 0, 1,
+    ])
+
+    geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3))
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3))
+    geo.setIndex(new THREE.BufferAttribute(indices, 1))
+    geo.computeVertexNormals()
+
+    return geo
+  }, [red, green, blue, black])
+
+  return (
+    <mesh geometry={geometry}>
+      <meshStandardMaterial
+        vertexColors
+        transparent
+        opacity={opacity}
+        side={THREE.DoubleSide}
+        emissive={new THREE.Color(0x111111)}
+        emissiveIntensity={0.3}
+      />
+    </mesh>
+  )
+}
+
+/**
  * 色域をワイヤーフレームで表示
  */
-function ColorGamut({ points, color = 'white', opacity = 0.6 }: { points: ColorPoint[]; color?: string; opacity?: number }) {
+function ColorGamut({
+  points,
+  color = 'white',
+  opacity = 0.6,
+}: {
+  points: ColorPoint[]
+  color?: string
+  opacity?: number
+}) {
   // RGB色空間の場合、三角柱として表示
   // points[0-2]: R, G, B
   // points[3-5]: Y, C, M
@@ -160,19 +263,40 @@ function AxisHelper() {
   return (
     <group>
       {/* X軸（赤） */}
-      <Line points={[[-0.5, 0, 0], [1.5, 0, 0]]} color="red" lineWidth={2} />
+      <Line
+        points={[
+          [-0.5, 0, 0],
+          [1.5, 0, 0],
+        ]}
+        color="red"
+        lineWidth={2}
+      />
       <Html position={[1.6, 0, 0]}>
         <div style={{ color: 'red', fontSize: '12px' }}>X</div>
       </Html>
 
       {/* Y軸（緑） */}
-      <Line points={[[0, -0.5, 0], [0, 1.5, 0]]} color="green" lineWidth={2} />
+      <Line
+        points={[
+          [0, -0.5, 0],
+          [0, 1.5, 0],
+        ]}
+        color="green"
+        lineWidth={2}
+      />
       <Html position={[0, 1.6, 0]}>
         <div style={{ color: 'green', fontSize: '12px' }}>Y</div>
       </Html>
 
       {/* Z軸（青） */}
-      <Line points={[[0, 0, -0.5], [0, 0, 1.5]]} color="blue" lineWidth={2} />
+      <Line
+        points={[
+          [0, 0, -0.5],
+          [0, 0, 1.5],
+        ]}
+        color="blue"
+        lineWidth={2}
+      />
       <Html position={[0, 0, 1.6]}>
         <div style={{ color: 'blue', fontSize: '12px' }}>Z</div>
       </Html>
@@ -189,7 +313,13 @@ function AxisHelper() {
 /**
  * 回転アニメーション（オプション）
  */
-function RotatingGroup({ children, autoRotate = false }: { children: React.ReactNode; autoRotate?: boolean }) {
+function RotatingGroup({
+  children,
+  autoRotate = false,
+}: {
+  children: React.ReactNode
+  autoRotate?: boolean
+}) {
   const groupRef = useRef<THREE.Group>(null)
 
   useFrame((state, delta) => {
@@ -208,7 +338,8 @@ export default function ColorSpaceViewer({
   colorPoints,
   profileName,
   colorPoints2,
-  profileName2
+  profileName2,
+  gradientMode = false,
 }: ColorSpaceViewerProps) {
   const compareMode = !!colorPoints2
 
@@ -250,14 +381,27 @@ export default function ColorSpaceViewer({
         {/* 色空間の表示 */}
         <RotatingGroup autoRotate={false}>
           {/* プロファイル1 */}
-          <ColorPoints points={colorPoints} opacity={compareMode ? 0.8 : 1} showLabels={!compareMode} />
-          <ColorGamut points={colorPoints} color="white" opacity={compareMode ? 0.4 : 0.6} />
+          <ColorPoints
+            points={colorPoints}
+            opacity={compareMode ? 0.8 : 1}
+            showLabels={!compareMode}
+          />
+
+          {gradientMode ? (
+            <ColorGamutSolid points={colorPoints} opacity={compareMode ? 0.6 : 0.8} />
+          ) : (
+            <ColorGamut points={colorPoints} color="white" opacity={compareMode ? 0.4 : 0.6} />
+          )}
 
           {/* プロファイル2（比較モード） */}
           {colorPoints2 && (
             <>
               <ColorPoints points={colorPoints2} opacity={0.8} showLabels={false} />
-              <ColorGamut points={colorPoints2} color="cyan" opacity={0.4} />
+              {gradientMode ? (
+                <ColorGamutSolid points={colorPoints2} opacity={0.5} />
+              ) : (
+                <ColorGamut points={colorPoints2} color="cyan" opacity={0.4} />
+              )}
             </>
           )}
 
@@ -272,9 +416,7 @@ export default function ColorSpaceViewer({
       {profileName && (
         <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded text-sm space-y-1">
           <div>📊 {profileName}</div>
-          {profileName2 && compareMode && (
-            <div className="text-cyan-300">📊 {profileName2}</div>
-          )}
+          {profileName2 && compareMode && <div className="text-cyan-300">📊 {profileName2}</div>}
         </div>
       )}
 

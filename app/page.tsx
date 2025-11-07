@@ -31,6 +31,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false)
   const [isLoading2, setIsLoading2] = useState(false)
   const [compareMode, setCompareMode] = useState(false)
+  const [gradientMode, setGradientMode] = useState(false)
 
   const loadSampleProfile = async (filename: string) => {
     setError(null)
@@ -132,12 +133,8 @@ export default function Home() {
   return (
     <div className="min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 items-center">
-        <h1 className="text-4xl font-bold text-center">
-          cprof
-        </h1>
-        <p className="text-center text-gray-600 dark:text-gray-400">
-          Color Profile 3D Viewer
-        </p>
+        <h1 className="text-4xl font-bold text-center">cprof</h1>
+        <p className="text-center text-gray-600 dark:text-gray-400">Color Profile 3D Viewer</p>
 
         <div className="flex flex-col gap-4 items-center w-full max-w-4xl">
           <div
@@ -162,9 +159,7 @@ export default function Home() {
 
           {/* サンプルプロファイル選択 */}
           <div className="w-full">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              またはサンプルを試す:
-            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">またはサンプルを試す:</p>
             <div className="flex flex-wrap gap-2">
               {SAMPLE_PROFILES.map((sample) => (
                 <button
@@ -178,6 +173,24 @@ export default function Home() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* グラデーションモードトグル */}
+          <div className="w-full">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={gradientMode}
+                onChange={(e) => setGradientMode(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700 dark:text-gray-300">
+                🎨 グラデーション着色モード
+              </span>
+            </label>
+            <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
+              色立体を実際の色でグラデーション表示します
+            </p>
           </div>
 
           {selectedFile && (
@@ -198,16 +211,19 @@ export default function Home() {
                           <span className="font-semibold">色空間:</span> {profile.header.colorSpace}
                         </div>
                         <div>
-                          <span className="font-semibold">バージョン:</span> {profile.header.version}
+                          <span className="font-semibold">バージョン:</span>{' '}
+                          {profile.header.version}
                         </div>
                         <div>
-                          <span className="font-semibold">デバイス:</span> {profile.header.deviceClass}
+                          <span className="font-semibold">デバイス:</span>{' '}
+                          {profile.header.deviceClass}
                         </div>
                         <div>
                           <span className="font-semibold">PCS:</span> {profile.header.pcs}
                         </div>
                         <div className="col-span-2">
-                          <span className="font-semibold">色域体積:</span> {profile.gamutVolume?.toFixed(6) ?? 'N/A'}
+                          <span className="font-semibold">色域体積:</span>{' '}
+                          {profile.gamutVolume?.toFixed(6) ?? 'N/A'}
                           {profile2 && profile.gamutVolume && profile2.gamutVolume && (
                             <span className="ml-2 text-gray-500">
                               (比率: {(profile.gamutVolume / profile2.gamutVolume).toFixed(2)}x)
@@ -260,19 +276,23 @@ export default function Home() {
                     <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="font-semibold">色空間:</span> {profile2.header.colorSpace}
+                          <span className="font-semibold">色空間:</span>{' '}
+                          {profile2.header.colorSpace}
                         </div>
                         <div>
-                          <span className="font-semibold">バージョン:</span> {profile2.header.version}
+                          <span className="font-semibold">バージョン:</span>{' '}
+                          {profile2.header.version}
                         </div>
                         <div>
-                          <span className="font-semibold">デバイス:</span> {profile2.header.deviceClass}
+                          <span className="font-semibold">デバイス:</span>{' '}
+                          {profile2.header.deviceClass}
                         </div>
                         <div>
                           <span className="font-semibold">PCS:</span> {profile2.header.pcs}
                         </div>
                         <div className="col-span-2">
-                          <span className="font-semibold">色域体積:</span> {profile2.gamutVolume?.toFixed(6) ?? 'N/A'}
+                          <span className="font-semibold">色域体積:</span>{' '}
+                          {profile2.gamutVolume?.toFixed(6) ?? 'N/A'}
                           {profile && profile.gamutVolume && profile2.gamutVolume && (
                             <span className="ml-2 text-gray-500">
                               (比率: {(profile2.gamutVolume / profile.gamutVolume).toFixed(2)}x)
@@ -316,6 +336,7 @@ export default function Home() {
                 profileName={profile.description || selectedFile?.name}
                 colorPoints2={profile2?.colorPoints}
                 profileName2={profile2?.description || selectedFile2?.name}
+                gradientMode={gradientMode}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
