@@ -271,9 +271,13 @@ export async function parseICCProfile(file: File): Promise<ICCProfile> {
     colorPoints = generateDefaultSRGBGamut();
   }
 
+  // 色域体積を計算
+  const gamutVolume = calculateGamutVolume(colorPoints);
+
   return {
     header,
     colorPoints,
+    gamutVolume,
     description,
   };
 }
@@ -289,4 +293,33 @@ function generateDefaultSRGBGamut(): ColorPoint[] {
   const whiteXYZ = { x: 0.9505, y: 1.0000, z: 1.0890 }; // D65
 
   return generateRGBGamut(redXYZ, greenXYZ, blueXYZ, whiteXYZ);
+}
+
+/**
+ * RGB色域の体積を計算（四面体の体積）
+ *
+ * RGB色域は、原点(Black)と3つのプライマリ(R,G,B)で構成される四面体として近似
+ */
+function calculateGamutVolume(points: ColorPoint[]): number {
+  if (points.length < 8) return 0;
+
+  const black = points[7]; // Black point
+  const red = points[0];
+  const green = points[1];
+  const blue = points[2];
+
+  // 四面体の体積 = |det(v1, v2, v3)| / 6
+  // v1 = R - Black, v2 = G - Black, v3 = B - Black
+
+  const v1 = { x: red.x - black.x, y: red.y - black.y, z: red.z - black.z };
+  const v2 = { x: green.x - black.x, y: green.y - black.y, z: green.z - black.z };
+  const v3 = { x: blue.x - black.x, y: blue.y - black.y, z: blue.z - black.z };
+
+  // 行列式（スカラー三重積）
+  const det =
+    v1.x * (v2.y * v3.z - v2.z * v3.y) -
+    v1.y * (v2.x * v3.z - v2.z * v3.x) +
+    v1.z * (v2.x * v3.y - v2.y * v3.x);
+
+  return Math.abs(det) / 6;
 }
