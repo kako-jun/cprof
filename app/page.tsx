@@ -1,15 +1,100 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
+import { parseICCProfile, type ICCProfile } from '@/lib/icc-parser'
+
+// Three.jsコンポーネントはクライアントサイドのみで動作
+const ColorSpaceViewer = dynamic(() => import('@/components/ColorSpaceViewer'), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center text-gray-600">
+      読み込み中...
+    </div>
+  ),
+})
+
+const SAMPLE_PROFILES = [
+  { name: 'sRGB', file: 'sRGB-v4.icc', description: '標準色域（Web）' },
+  { name: 'Adobe RGB', file: 'AdobeCompat-v4.icc', description: '広色域（印刷）' },
+  { name: 'Display P3', file: 'DisplayP3-v4.icc', description: 'Apple向け広色域' },
+  { name: 'Rec.2020', file: 'Rec2020-v4.icc', description: '4K/HDR映像用' },
+  { name: 'ProPhoto RGB', file: 'ProPhoto-v4.icc', description: '超広色域（写真編集）' },
+]
 
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [profile, setProfile] = useState<ICCProfile | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
+  const loadSampleProfile = async (filename: string) => {
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const response = await fetch(`/profiles/${filename}`)
+      if (!response.ok) throw new Error(`Failed to load ${filename}`)
+
+      const blob = await response.blob()
+      const file = new File([blob], filename, { type: 'application/octet-stream' })
+
       setSelectedFile(file)
+      const parsedProfile = await parseICCProfile(file)
+      setProfile(parsedProfile)
+    } catch (err) {
+      console.error('Sample profile loading error:', err)
+      setError(err instanceof Error ? err.message : 'サンプルプロファイルの読み込みに失敗しました')
+      setProfile(null)
+    } finally {
+      setIsLoading(false)
     }
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setSelectedFile(file)
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const parsedProfile = await parseICCProfile(file)
+      setProfile(parsedProfile)
+    } catch (err) {
+      console.error('ICC parsing error:', err)
+      setError(err instanceof Error ? err.message : 'プロファイルの解析に失敗しました')
+      setProfile(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const file = event.dataTransfer.files[0]
+
+    if (file && (file.name.endsWith('.icc') || file.name.endsWith('.icm'))) {
+      setSelectedFile(file)
+      setError(null)
+      setIsLoading(true)
+
+      try {
+        const parsedProfile = await parseICCProfile(file)
+        setProfile(parsedProfile)
+      } catch (err) {
+        console.error('ICC parsing error:', err)
+        setError(err instanceof Error ? err.message : 'プロファイルの解析に失敗しました')
+        setProfile(null)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+  }
+
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
   }
 
   return (
@@ -22,8 +107,12 @@ export default function Home() {
           Color Profile 3D Viewer
         </p>
 
-        <div className="flex flex-col gap-4 items-center w-full max-w-md">
-          <div className="w-full border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center">
+        <div className="flex flex-col gap-4 items-center w-full max-w-4xl">
+          <div
+            className="w-full border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          >
             <input
               type="file"
               accept=".icc,.icm"
@@ -31,10 +120,7 @@ export default function Home() {
               className="hidden"
               id="file-input"
             />
-            <label
-              htmlFor="file-input"
-              className="cursor-pointer block"
-            >
+            <label htmlFor="file-input" className="cursor-pointer block">
               <div className="text-gray-600 dark:text-gray-400">
                 <p className="mb-2">ICC/ICMプロファイルをドロップ</p>
                 <p className="text-sm">またはクリックして選択</p>
@@ -42,21 +128,84 @@ export default function Home() {
             </label>
           </div>
 
+          {/* サンプルプロファイル選択 */}
+          <div className="w-full">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              またはサンプルを試す:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {SAMPLE_PROFILES.map((sample) => (
+                <button
+                  key={sample.file}
+                  onClick={() => loadSampleProfile(sample.file)}
+                  className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
+                  title={sample.description}
+                  disabled={isLoading}
+                >
+                  {sample.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {selectedFile && (
             <div className="w-full p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
               <p className="text-sm">
-                <span className="font-semibold">選択中:</span> {selectedFile.name}
+                <span className="font-semibold">ファイル:</span> {selectedFile.name}
               </p>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 サイズ: {(selectedFile.size / 1024).toFixed(2)} KB
               </p>
+
+              {profile && (
+                <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="font-semibold">色空間:</span> {profile.header.colorSpace}
+                    </div>
+                    <div>
+                      <span className="font-semibold">バージョン:</span> {profile.header.version}
+                    </div>
+                    <div>
+                      <span className="font-semibold">デバイス:</span> {profile.header.deviceClass}
+                    </div>
+                    <div>
+                      <span className="font-semibold">PCS:</span> {profile.header.pcs}
+                    </div>
+                  </div>
+                  {profile.description && (
+                    <p className="text-xs mt-2">
+                      <span className="font-semibold">説明:</span> {profile.description}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
-          <div className="w-full h-96 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-            <p className="text-gray-600 dark:text-gray-400">
-              3D表示エリア（開発中）
-            </p>
+          {error && (
+            <div className="w-full p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg">
+              <p className="text-sm">⚠️ {error}</p>
+            </div>
+          )}
+
+          <div className="w-full h-[600px] bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+            {isLoading ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <p className="text-gray-600 dark:text-gray-400">解析中...</p>
+              </div>
+            ) : profile ? (
+              <ColorSpaceViewer
+                colorPoints={profile.colorPoints}
+                profileName={profile.description || selectedFile?.name}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <p className="text-gray-600 dark:text-gray-400">
+                  プロファイルを選択すると3D表示されます
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

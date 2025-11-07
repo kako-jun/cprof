@@ -1,80 +1,131 @@
 # cprof
 
-**Color Profile 3D Viewer** - ICC/WCS/OCIOプロファイルを3Dで可視化する革新的なビューア
+**Color Profile 3D Viewer** - ICC/WCS/OCIO profiles visualizer
 
-## 🎯 プロジェクト概要
+ICCプロファイルを3D空間で可視化し、色域をインタラクティブに探索できるWebアプリケーション
 
-cprofは、各種カラープロファイル（ICC、WCS、OpenColorIOなど）を読み込み、色空間を3Dでインタラクティブに可視化できるWebアプリケーションです。Rust + WebAssemblyで高速な解析処理を実現し、Three.jsで美しい3D表示を提供します。
+![cprof](https://img.shields.io/badge/status-beta-yellow)
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
+![Three.js](https://img.shields.io/badge/Three.js-0.170-green)
 
 ## ✨ 特徴
 
-- **完全クライアントサイド**: サーバー不要、プライバシー保護、オフライン動作可能
-- **Rust + WebAssembly**: ネイティブ並みの高速ICC解析
-- **3Dインタラクティブ表示**: マウスで回転・ズーム、複数プロファイル比較
-- **多形式対応**: ICC、WCS、OpenColorIO、3D LUTなど
-- **モダンスタック**: Next.js 14 + React 18 + TypeScript + Tailwind CSS
+- 🎨 **3D可視化**: 色空間をインタラクティブな3Dで表示
+- 🔄 **直感操作**: マウスで回転・ズーム可能
+- 📁 **ドラッグ&ドロップ**: ICCファイルを簡単に読み込み
+- 🚀 **高速**: TypeScriptによる軽量実装
+- 🌐 **ブラウザ完結**: サーバー不要、ローカルで完全動作
+- 📱 **レスポンシブ**: デスクトップ・モバイル対応
 
-## 🚀 技術スタック
+## 🎯 対応フォーマット
 
-| レイヤー | 技術 | 用途 |
-|---------|------|------|
-| **フレームワーク** | Next.js 14 (App Router) | 静的エクスポート対応 |
-| **言語** | TypeScript + Rust | フロントエンド + WebAssembly |
-| **コア処理** | Rust → WebAssembly | ICC解析・色空間変換 |
-| **3D表示** | Three.js + React Three Fiber | 色空間の3D可視化 |
-| **スタイリング** | Tailwind CSS | モダンなUI |
-| **ホスティング** | GitHub Pages / Cloudflare Pages | 静的サイト配信 |
+### 現在対応
+- ✅ ICC v2/v4 プロファイル (.icc, .icm)
+- ✅ RGB色空間
+- ✅ グレースケール
 
-## 📁 プロジェクト構成
+### 将来対応予定
+- 🔜 WCS (Windows Color System)
+- 🔜 OpenColorIO (.ocio)
+- 🔜 3D LUT (.cube)
+- 🔜 CMYK色空間
+
+## 🚀 クイックスタート
+
+### 前提条件
+- Node.js 18+
+- npm または yarn
+
+### インストール
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/kako-jun/cprof.git
+cd cprof
+
+# 依存関係をインストール
+npm install
+
+# 開発サーバーを起動
+npm run dev
+```
+
+ブラウザで http://localhost:3000 を開く
+
+### 使い方
+
+1. **ファイルを選択**
+   - ドラッグ&ドロップ
+   - クリックして選択
+   - サンプルボタンをクリック
+
+2. **3D表示を操作**
+   - 🖱️ ドラッグ: 回転
+   - 🔍 ホイール: ズーム
+   - 📊 色域の違いを比較
+
+## 📦 サンプルプロファイル
+
+以下のサンプルプロファイルが含まれています：
+
+| プロファイル | 色域 | 用途 |
+|------------|------|------|
+| sRGB | 標準 | Web、一般ディスプレイ |
+| Adobe RGB | 広 | 印刷、写真編集 |
+| Display P3 | 広 | Apple製品、HDR |
+| Rec.2020 | 超広 | 4K/8K映像 |
+| ProPhoto RGB | 最大 | プロフェッショナル写真 |
+
+## 🛠 技術スタック
+
+- **フレームワーク**: Next.js 15 (App Router)
+- **言語**: TypeScript 5.7
+- **3D描画**: Three.js + React Three Fiber
+- **スタイリング**: Tailwind CSS
+- **将来**: Rust + WebAssembly (パフォーマンス最適化)
+
+## 🏗 プロジェクト構造
 
 ```
 cprof/
-├── app/                   # Next.js App Router
+├── app/                    # Next.js App Router
+│   ├── page.tsx           # メインページ
+│   ├── layout.tsx         # レイアウト
+│   └── globals.css        # グローバルスタイル
 ├── components/            # Reactコンポーネント
-├── lib/                   # ユーティリティ・WebAssembly
-├── cprof-core/            # Rustコア（ICC解析エンジン）
-├── test-profiles/         # テスト用ICCプロファイル（8種類）
-├── public/                # 静的アセット
-├── package.json
-├── next.config.ts
-├── tsconfig.json
-└── tailwind.config.ts
+│   └── ColorSpaceViewer.tsx  # 3D表示コンポーネント
+├── lib/                   # ユーティリティ
+│   └── icc-parser.ts      # ICC解析ライブラリ
+├── public/                # 静的ファイル
+│   └── profiles/          # サンプルプロファイル
+└── test-profiles/         # 開発用テストプロファイル
 ```
 
-## 🎨 サポートする色空間
+## 🤝 コントリビューション
 
-- **標準**: sRGB
-- **広色域**: Adobe RGB (1998), Display P3, ProPhoto RGB, Rec.2020
-- **グレースケール**: sGrey
-- **将来**: WCS、OpenColorIO、3D LUT
+プルリクエスト歓迎！以下の改善アイデアを募集中：
 
-## 🛠 開発
+- [ ] より多くの色空間対応（Lab, XYZ, etc.）
+- [ ] プロファイル比較表示
+- [ ] 色域の数値計算・表示
+- [ ] Rust + WebAssemblyへの移行
+- [ ] エクスポート機能
 
-```bash
-# 依存関係インストール
-npm install
-
-# Rustコアをビルド（WebAssembly）
-cd cprof-core
-wasm-pack build --target web
-
-# 開発サーバー起動
-cd ..
-npm run dev
-
-# 静的エクスポート
-npm run build
-```
-
-## 📝 ライセンス
+## 📄 ライセンス
 
 MIT License
 
-## 🙏 参考
+## 🔗 関連プロジェクト
 
-テストプロファイルは以下のオープンソースプロジェクトから提供されています：
+- [xsg](https://github.com/kako-jun/xsg) - SVG最適化ツール（Rust製）
 
-- [saucecontrol/Compact-ICC-Profiles](https://github.com/saucecontrol/Compact-ICC-Profiles) (CC0-1.0)
-- [svgeesus/PNG-ICC-tests](https://github.com/svgeesus/PNG-ICC-tests)
+## 📝 参考資料
 
-プロジェクト構成は [machigai-salad](https://github.com/kako-jun/machigai-salad) を参考にしています。
+- [ICC Specification](https://www.color.org/specification/ICC.1-2022-05.pdf)
+- [Compact ICC Profiles](https://github.com/saucecontrol/Compact-ICC-Profiles)
+- [Three.js Documentation](https://threejs.org/docs/)
+
+---
+
+**開発中のプロジェクトです。フィードバック歓迎！**
