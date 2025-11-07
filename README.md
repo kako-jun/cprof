@@ -102,6 +102,35 @@ cprof/
 └── test-profiles/         # 開発用テストプロファイル
 ```
 
+## 📦 デプロイ
+
+### GitHub Pagesへのデプロイ
+
+1. **GitHub Pages を有効化**
+   - リポジトリの Settings → Pages
+   - Source: GitHub Actions
+
+2. **自動デプロイ**
+   - `main`ブランチにpushすると自動デプロイ
+   - `.github/workflows/deploy.yml`で設定済み
+
+3. **手動ビルド**
+```bash
+# 静的ビルド
+npm run build
+
+# ローカルでプレビュー
+cd out
+python3 -m http.server 8000
+# http://localhost:8000 で確認
+```
+
+### その他のホスティング
+
+**Cloudflare Pages / Vercel / Netlify**でも簡単にデプロイ可能：
+- ビルドコマンド: `npm run build`
+- 出力ディレクトリ: `out`
+
 ## 🤝 コントリビューション
 
 プルリクエスト歓迎！以下の改善アイデアを募集中：
