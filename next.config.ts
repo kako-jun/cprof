@@ -2,12 +2,16 @@ import type { NextConfig } from 'next'
 
 const isProd = process.env.NODE_ENV === 'production'
 const isGitHubPages = process.env.GITHUB_PAGES === 'true'
+const basePath = isProd && isGitHubPages ? '/cprof' : ''
 
 const nextConfig: NextConfig = {
   output: 'export',
-  basePath: isProd && isGitHubPages ? '/cprof' : '',
+  basePath,
   images: {
     unoptimized: true,
+  },
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
   },
   webpack: (config) => {
     // WebAssemblyサポート
