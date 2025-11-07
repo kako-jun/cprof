@@ -108,11 +108,12 @@ cprof/
 
 1. **GitHub Pages を有効化**
    - リポジトリの Settings → Pages
-   - Source: GitHub Actions
+   - Source: GitHub Actions を選択
 
 2. **自動デプロイ**
-   - `main`ブランチにpushすると自動デプロイ
+   - `main` または `claude/*` ブランチにpushすると自動デプロイ
    - `.github/workflows/deploy.yml`で設定済み
+   - デプロイURL: `https://kako-jun.github.io/cprof/`
 
 3. **手動ビルド**
 ```bash
