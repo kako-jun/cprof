@@ -9,12 +9,14 @@ import type { ColorPoint } from '@/lib/icc-parser'
 interface ColorSpaceViewerProps {
   colorPoints: ColorPoint[]
   profileName?: string
+  colorPoints2?: ColorPoint[]
+  profileName2?: string
 }
 
 /**
  * 色空間の点を3Dで表示するコンポーネント
  */
-function ColorPoints({ points }: { points: ColorPoint[] }) {
+function ColorPoints({ points, opacity = 1, showLabels = true }: { points: ColorPoint[]; opacity?: number; showLabels?: boolean }) {
   return (
     <>
       {points.map((point, index) => (
@@ -26,11 +28,13 @@ function ColorPoints({ points }: { points: ColorPoint[] }) {
               color={point.color || '#ffffff'}
               emissive={point.color || '#ffffff'}
               emissiveIntensity={0.5}
+              transparent={opacity < 1}
+              opacity={opacity}
             />
           </mesh>
 
           {/* ラベル */}
-          {point.label && (
+          {point.label && showLabels && (
             <Html distanceFactor={2}>
               <div
                 style={{
@@ -41,6 +45,7 @@ function ColorPoints({ points }: { points: ColorPoint[] }) {
                   borderRadius: '3px',
                   whiteSpace: 'nowrap',
                   pointerEvents: 'none',
+                  opacity: opacity,
                 }}
               >
                 {point.label}
@@ -56,7 +61,7 @@ function ColorPoints({ points }: { points: ColorPoint[] }) {
 /**
  * 色域をワイヤーフレームで表示
  */
-function ColorGamut({ points }: { points: ColorPoint[] }) {
+function ColorGamut({ points, color = 'white', opacity = 0.6 }: { points: ColorPoint[]; color?: string; opacity?: number }) {
   // RGB色空間の場合、三角柱として表示
   // points[0-2]: R, G, B
   // points[3-5]: Y, C, M
@@ -138,10 +143,10 @@ function ColorGamut({ points }: { points: ColorPoint[] }) {
         <Line
           key={i}
           points={edge.map((p) => new THREE.Vector3(p[0], p[1], p[2]))}
-          color="white"
+          color={color}
           lineWidth={1.5}
           transparent
-          opacity={0.6}
+          opacity={opacity}
         />
       ))}
     </>
@@ -199,10 +204,35 @@ function RotatingGroup({ children, autoRotate = false }: { children: React.React
 /**
  * メインの3Dビューアコンポーネント
  */
-export default function ColorSpaceViewer({ colorPoints, profileName }: ColorSpaceViewerProps) {
+export default function ColorSpaceViewer({
+  colorPoints,
+  profileName,
+  colorPoints2,
+  profileName2
+}: ColorSpaceViewerProps) {
+  const compareMode = !!colorPoints2
+
+  const handleScreenshot = () => {
+    const canvas = document.querySelector('canvas')
+    if (!canvas) return
+
+    // canvasをPNG画像として保存
+    canvas.toBlob((blob) => {
+      if (!blob) return
+
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      const filename = `cprof-${profileName?.replace(/[^a-z0-9]/gi, '_') || 'screenshot'}-${Date.now()}.png`
+      link.href = url
+      link.download = filename
+      link.click()
+      URL.revokeObjectURL(url)
+    })
+  }
+
   return (
     <div className="w-full h-full relative">
-      <Canvas>
+      <Canvas gl={{ preserveDrawingBuffer: true }}>
         <PerspectiveCamera makeDefault position={[2, 1.5, 2]} fov={50} />
         <OrbitControls
           enableDamping
@@ -219,8 +249,18 @@ export default function ColorSpaceViewer({ colorPoints, profileName }: ColorSpac
 
         {/* 色空間の表示 */}
         <RotatingGroup autoRotate={false}>
-          <ColorPoints points={colorPoints} />
-          <ColorGamut points={colorPoints} />
+          {/* プロファイル1 */}
+          <ColorPoints points={colorPoints} opacity={compareMode ? 0.8 : 1} showLabels={!compareMode} />
+          <ColorGamut points={colorPoints} color="white" opacity={compareMode ? 0.4 : 0.6} />
+
+          {/* プロファイル2（比較モード） */}
+          {colorPoints2 && (
+            <>
+              <ColorPoints points={colorPoints2} opacity={0.8} showLabels={false} />
+              <ColorGamut points={colorPoints2} color="cyan" opacity={0.4} />
+            </>
+          )}
+
           <AxisHelper />
         </RotatingGroup>
 
@@ -230,15 +270,35 @@ export default function ColorSpaceViewer({ colorPoints, profileName }: ColorSpac
 
       {/* プロファイル名の表示 */}
       {profileName && (
-        <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded text-sm">
-          {profileName}
+        <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded text-sm space-y-1">
+          <div>📊 {profileName}</div>
+          {profileName2 && compareMode && (
+            <div className="text-cyan-300">📊 {profileName2}</div>
+          )}
         </div>
       )}
 
-      {/* 操作説明 */}
-      <div className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded text-xs">
-        <div>🖱️ ドラッグ: 回転</div>
-        <div>🔍 ホイール: ズーム</div>
+      {/* 比較モード表示 */}
+      {compareMode && (
+        <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded text-xs">
+          <div className="font-semibold mb-1">比較モード</div>
+          <div>白: プロファイル1</div>
+          <div className="text-cyan-300">シアン: プロファイル2</div>
+        </div>
+      )}
+
+      {/* 操作説明とスクリーンショットボタン */}
+      <div className="absolute bottom-4 right-4 space-y-2">
+        <div className="bg-black bg-opacity-50 text-white px-3 py-2 rounded text-xs">
+          <div>🖱️ ドラッグ: 回転</div>
+          <div>🔍 ホイール: ズーム</div>
+        </div>
+        <button
+          onClick={handleScreenshot}
+          className="w-full px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors flex items-center justify-center gap-2"
+        >
+          📸 スクリーンショット
+        </button>
       </div>
     </div>
   )

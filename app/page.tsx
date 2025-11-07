@@ -25,8 +25,12 @@ const SAMPLE_PROFILES = [
 export default function Home() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [profile, setProfile] = useState<ICCProfile | null>(null)
+  const [selectedFile2, setSelectedFile2] = useState<File | null>(null)
+  const [profile2, setProfile2] = useState<ICCProfile | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoading2, setIsLoading2] = useState(false)
+  const [compareMode, setCompareMode] = useState(false)
 
   const loadSampleProfile = async (filename: string) => {
     setError(null)
@@ -97,6 +101,33 @@ export default function Home() {
     event.preventDefault()
   }
 
+  const handleFileChange2 = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setSelectedFile2(file)
+    setError(null)
+    setIsLoading2(true)
+
+    try {
+      const parsedProfile = await parseICCProfile(file)
+      setProfile2(parsedProfile)
+      setCompareMode(true)
+    } catch (err) {
+      console.error('ICC parsing error:', err)
+      setError(err instanceof Error ? err.message : 'プロファイルの解析に失敗しました')
+      setProfile2(null)
+    } finally {
+      setIsLoading2(false)
+    }
+  }
+
+  const clearComparison = () => {
+    setSelectedFile2(null)
+    setProfile2(null)
+    setCompareMode(false)
+  }
+
   return (
     <div className="min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 items-center">
@@ -150,36 +181,120 @@ export default function Home() {
 
           {selectedFile && (
             <div className="w-full p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <p className="text-sm">
-                <span className="font-semibold">ファイル:</span> {selectedFile.name}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                サイズ: {(selectedFile.size / 1024).toFixed(2)} KB
-              </p>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <p className="text-sm">
+                    <span className="font-semibold">プロファイル 1:</span> {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    サイズ: {(selectedFile.size / 1024).toFixed(2)} KB
+                  </p>
 
-              {profile && (
-                <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="font-semibold">色空間:</span> {profile.header.colorSpace}
+                  {profile && (
+                    <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="font-semibold">色空間:</span> {profile.header.colorSpace}
+                        </div>
+                        <div>
+                          <span className="font-semibold">バージョン:</span> {profile.header.version}
+                        </div>
+                        <div>
+                          <span className="font-semibold">デバイス:</span> {profile.header.deviceClass}
+                        </div>
+                        <div>
+                          <span className="font-semibold">PCS:</span> {profile.header.pcs}
+                        </div>
+                        <div className="col-span-2">
+                          <span className="font-semibold">色域体積:</span> {profile.gamutVolume.toFixed(6)}
+                          {profile2 && (
+                            <span className="ml-2 text-gray-500">
+                              (比率: {(profile.gamutVolume / profile2.gamutVolume).toFixed(2)}x)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {profile.description && (
+                        <p className="text-xs mt-2">
+                          <span className="font-semibold">説明:</span> {profile.description}
+                        </p>
+                      )}
                     </div>
-                    <div>
-                      <span className="font-semibold">バージョン:</span> {profile.header.version}
-                    </div>
-                    <div>
-                      <span className="font-semibold">デバイス:</span> {profile.header.deviceClass}
-                    </div>
-                    <div>
-                      <span className="font-semibold">PCS:</span> {profile.header.pcs}
-                    </div>
-                  </div>
-                  {profile.description && (
-                    <p className="text-xs mt-2">
-                      <span className="font-semibold">説明:</span> {profile.description}
-                    </p>
                   )}
                 </div>
-              )}
+
+                {!compareMode && profile && (
+                  <div className="ml-4">
+                    <label
+                      htmlFor="file-input-2"
+                      className="cursor-pointer px-3 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
+                    >
+                      + 比較
+                    </label>
+                    <input
+                      type="file"
+                      accept=".icc,.icm"
+                      onChange={handleFileChange2}
+                      className="hidden"
+                      id="file-input-2"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {selectedFile2 && (
+            <div className="w-full p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <p className="text-sm">
+                    <span className="font-semibold">プロファイル 2:</span> {selectedFile2.name}
+                  </p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    サイズ: {(selectedFile2.size / 1024).toFixed(2)} KB
+                  </p>
+
+                  {profile2 && (
+                    <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="font-semibold">色空間:</span> {profile2.header.colorSpace}
+                        </div>
+                        <div>
+                          <span className="font-semibold">バージョン:</span> {profile2.header.version}
+                        </div>
+                        <div>
+                          <span className="font-semibold">デバイス:</span> {profile2.header.deviceClass}
+                        </div>
+                        <div>
+                          <span className="font-semibold">PCS:</span> {profile2.header.pcs}
+                        </div>
+                        <div className="col-span-2">
+                          <span className="font-semibold">色域体積:</span> {profile2.gamutVolume.toFixed(6)}
+                          {profile && (
+                            <span className="ml-2 text-gray-500">
+                              (比率: {(profile2.gamutVolume / profile.gamutVolume).toFixed(2)}x)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {profile2.description && (
+                        <p className="text-xs mt-2">
+                          <span className="font-semibold">説明:</span> {profile2.description}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={clearComparison}
+                  className="ml-4 px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+                >
+                  削除
+                </button>
+              </div>
             </div>
           )}
 
@@ -190,7 +305,7 @@ export default function Home() {
           )}
 
           <div className="w-full h-[600px] bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-            {isLoading ? (
+            {isLoading || isLoading2 ? (
               <div className="w-full h-full flex items-center justify-center">
                 <p className="text-gray-600 dark:text-gray-400">解析中...</p>
               </div>
@@ -198,6 +313,8 @@ export default function Home() {
               <ColorSpaceViewer
                 colorPoints={profile.colorPoints}
                 profileName={profile.description || selectedFile?.name}
+                colorPoints2={profile2?.colorPoints}
+                profileName2={profile2?.description || selectedFile2?.name}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
