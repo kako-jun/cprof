@@ -206,8 +206,8 @@ export default function Home() {
                           <span className="font-semibold">PCS:</span> {profile.header.pcs}
                         </div>
                         <div className="col-span-2">
-                          <span className="font-semibold">色域体積:</span> {profile.gamutVolume.toFixed(6)}
-                          {profile2 && (
+                          <span className="font-semibold">色域体積:</span> {profile.gamutVolume?.toFixed(6) ?? 'N/A'}
+                          {profile2 && profile.gamutVolume && profile2.gamutVolume && (
                             <span className="ml-2 text-gray-500">
                               (比率: {(profile.gamutVolume / profile2.gamutVolume).toFixed(2)}x)
                             </span>
@@ -271,8 +271,8 @@ export default function Home() {
                           <span className="font-semibold">PCS:</span> {profile2.header.pcs}
                         </div>
                         <div className="col-span-2">
-                          <span className="font-semibold">色域体積:</span> {profile2.gamutVolume.toFixed(6)}
-                          {profile && (
+                          <span className="font-semibold">色域体積:</span> {profile2.gamutVolume?.toFixed(6) ?? 'N/A'}
+                          {profile && profile.gamutVolume && profile2.gamutVolume && (
                             <span className="ml-2 text-gray-500">
                               (比率: {(profile2.gamutVolume / profile.gamutVolume).toFixed(2)}x)
                             </span>
