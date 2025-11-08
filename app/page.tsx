@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { parseICCProfile, type ICCProfile } from '@/lib/icc-parser'
+import ColorSpace2D from '@/components/ColorSpace2D'
 
 // Three.jsコンポーネントはクライアントサイドのみで動作
 const ColorSpaceViewer = dynamic(() => import('@/components/ColorSpaceViewer'), {
@@ -32,6 +33,9 @@ export default function Home() {
   const [isLoading2, setIsLoading2] = useState(false)
   const [compareMode, setCompareMode] = useState(false)
   const [gradientMode, setGradientMode] = useState(false)
+  const [fullGamutMode, setFullGamutMode] = useState(false)
+  const [solidOpacity, setSolidOpacity] = useState(0.8)
+  const [show2D, setShow2D] = useState(true)
 
   const loadSampleProfile = async (filename: string) => {
     setError(null)
@@ -175,22 +179,76 @@ export default function Home() {
             </div>
           </div>
 
-          {/* グラデーションモードトグル */}
-          <div className="w-full">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={gradientMode}
-                onChange={(e) => setGradientMode(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-gray-300">
-                🎨 グラデーション着色モード
-              </span>
-            </label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
-              色立体を実際の色でグラデーション表示します
-            </p>
+          {/* 表示設定 */}
+          <div className="w-full space-y-3 border-t border-gray-300 dark:border-gray-700 pt-4">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">表示設定</h3>
+
+            {/* グラデーションモードトグル */}
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={gradientMode}
+                  onChange={(e) => setGradientMode(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">
+                  🎨 グラデーション着色モード
+                </span>
+              </label>
+            </div>
+
+            {/* 全色域モードトグル */}
+            {gradientMode && (
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={fullGamutMode}
+                    onChange={(e) => setFullGamutMode(e.target.checked)}
+                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    🔷 全色域表示（8点）
+                  </span>
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
+                  R,G,B,Y,C,M,W,K すべての点を使った立体
+                </p>
+              </div>
+            )}
+
+            {/* 透明度スライダー */}
+            {gradientMode && (
+              <div>
+                <label className="text-sm text-gray-700 dark:text-gray-300 flex items-center justify-between">
+                  <span>💎 透明度</span>
+                  <span className="text-xs">{Math.round(solidOpacity * 100)}%</span>
+                </label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1"
+                  step="0.05"
+                  value={solidOpacity}
+                  onChange={(e) => setSolidOpacity(parseFloat(e.target.value))}
+                  className="w-full mt-1"
+                />
+              </div>
+            )}
+
+            {/* 2D表示トグル */}
+            <div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={show2D}
+                  onChange={(e) => setShow2D(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300">📊 2D色空間表示</span>
+              </label>
+            </div>
           </div>
 
           {selectedFile && (
@@ -337,6 +395,8 @@ export default function Home() {
                 colorPoints2={profile2?.colorPoints}
                 profileName2={profile2?.description || selectedFile2?.name}
                 gradientMode={gradientMode}
+                fullGamutMode={fullGamutMode}
+                solidOpacity={solidOpacity}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -346,6 +406,45 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {/* 2D色空間表示 */}
+          {show2D && profile && (
+            <div className="w-full mt-8">
+              <h2 className="text-2xl font-bold mb-4 text-center">2D色空間表示</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <ColorSpace2D
+                  colorPoints={profile.colorPoints}
+                  profileName={profile.description || selectedFile?.name}
+                  type="xy"
+                />
+                <ColorSpace2D
+                  colorPoints={profile.colorPoints}
+                  profileName={profile.description || selectedFile?.name}
+                  type="lab"
+                />
+                <ColorSpace2D
+                  colorPoints={profile.colorPoints}
+                  profileName={profile.description || selectedFile?.name}
+                  type="lch"
+                />
+                <ColorSpace2D
+                  colorPoints={profile.colorPoints}
+                  profileName={profile.description || selectedFile?.name}
+                  type="rgb-xy"
+                />
+                <ColorSpace2D
+                  colorPoints={profile.colorPoints}
+                  profileName={profile.description || selectedFile?.name}
+                  type="rgb-xz"
+                />
+                <ColorSpace2D
+                  colorPoints={profile.colorPoints}
+                  profileName={profile.description || selectedFile?.name}
+                  type="rgb-yz"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-4 mt-8">
