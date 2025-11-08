@@ -12,6 +12,8 @@ interface ColorSpaceViewerProps {
   colorPoints2?: ColorPoint[]
   profileName2?: string
   gradientMode?: boolean
+  fullGamutMode?: boolean
+  solidOpacity?: number
 }
 
 /**
@@ -138,6 +140,97 @@ function ColorGamutSolid({ points, opacity = 0.8 }: { points: ColorPoint[]; opac
 
     return geo
   }, [red, green, blue, black])
+
+  return (
+    <mesh geometry={geometry}>
+      <meshStandardMaterial
+        vertexColors
+        transparent
+        opacity={opacity}
+        side={THREE.DoubleSide}
+        emissive={new THREE.Color(0x111111)}
+        emissiveIntensity={0.3}
+      />
+    </mesh>
+  )
+}
+
+/**
+ * グラデーション着色された色立体を表示（全8点使用）
+ */
+function ColorGamutFullSolid({
+  points,
+  opacity = 0.8,
+}: {
+  points: ColorPoint[]
+  opacity?: number
+}) {
+  if (points.length < 8) return null
+
+  const red = points[0] // R
+  const green = points[1] // G
+  const blue = points[2] // B
+  const yellow = points[3] // Y
+  const cyan = points[4] // C
+  const magenta = points[5] // M
+  const white = points[6] // W
+  const black = points[7] // K
+
+  // RGB立方体の全ての面を表現するジオメトリを作成
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry()
+
+    // 頂点座標（各面ごとに頂点を定義）
+    const vertices: number[] = []
+    const colors: number[] = []
+
+    // 各面を定義する関数
+    const addTriangle = (
+      p1: ColorPoint,
+      p2: ColorPoint,
+      p3: ColorPoint,
+      c1: number[],
+      c2: number[],
+      c3: number[]
+    ) => {
+      vertices.push(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z)
+      colors.push(...c1, ...c2, ...c3)
+    }
+
+    // 底面（黒を含む面）
+    addTriangle(black, red, green, [0, 0, 0], [1, 0, 0], [0, 1, 0])
+    addTriangle(black, green, blue, [0, 0, 0], [0, 1, 0], [0, 0, 1])
+    addTriangle(black, blue, red, [0, 0, 0], [0, 0, 1], [1, 0, 0])
+
+    // 側面（二次色を含む面）
+    // 赤-黄-白-マゼンタ面
+    addTriangle(red, yellow, magenta, [1, 0, 0], [1, 1, 0], [1, 0, 1])
+    addTriangle(yellow, white, magenta, [1, 1, 0], [1, 1, 1], [1, 0, 1])
+
+    // 緑-黄-白-シアン面
+    addTriangle(green, yellow, cyan, [0, 1, 0], [1, 1, 0], [0, 1, 1])
+    addTriangle(yellow, white, cyan, [1, 1, 0], [1, 1, 1], [0, 1, 1])
+
+    // 青-シアン-白-マゼンタ面
+    addTriangle(blue, cyan, magenta, [0, 0, 1], [0, 1, 1], [1, 0, 1])
+    addTriangle(cyan, white, magenta, [0, 1, 1], [1, 1, 1], [1, 0, 1])
+
+    // 中間面（黒から二次色への面）
+    addTriangle(black, red, yellow, [0, 0, 0], [1, 0, 0], [1, 1, 0])
+    addTriangle(black, yellow, green, [0, 0, 0], [1, 1, 0], [0, 1, 0])
+
+    addTriangle(black, green, cyan, [0, 0, 0], [0, 1, 0], [0, 1, 1])
+    addTriangle(black, cyan, blue, [0, 0, 0], [0, 1, 1], [0, 0, 1])
+
+    addTriangle(black, blue, magenta, [0, 0, 0], [0, 0, 1], [1, 0, 1])
+    addTriangle(black, magenta, red, [0, 0, 0], [1, 0, 1], [1, 0, 0])
+
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3))
+    geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(colors), 3))
+    geo.computeVertexNormals()
+
+    return geo
+  }, [red, green, blue, yellow, cyan, magenta, white, black])
 
   return (
     <mesh geometry={geometry}>
@@ -340,6 +433,8 @@ export default function ColorSpaceViewer({
   colorPoints2,
   profileName2,
   gradientMode = false,
+  fullGamutMode = false,
+  solidOpacity = 0.8,
 }: ColorSpaceViewerProps) {
   const compareMode = !!colorPoints2
 
@@ -388,7 +483,11 @@ export default function ColorSpaceViewer({
           />
 
           {gradientMode ? (
-            <ColorGamutSolid points={colorPoints} opacity={compareMode ? 0.6 : 0.8} />
+            fullGamutMode ? (
+              <ColorGamutFullSolid points={colorPoints} opacity={solidOpacity} />
+            ) : (
+              <ColorGamutSolid points={colorPoints} opacity={solidOpacity} />
+            )
           ) : (
             <ColorGamut points={colorPoints} color="white" opacity={compareMode ? 0.4 : 0.6} />
           )}
@@ -398,7 +497,11 @@ export default function ColorSpaceViewer({
             <>
               <ColorPoints points={colorPoints2} opacity={0.8} showLabels={false} />
               {gradientMode ? (
-                <ColorGamutSolid points={colorPoints2} opacity={0.5} />
+                fullGamutMode ? (
+                  <ColorGamutFullSolid points={colorPoints2} opacity={solidOpacity * 0.7} />
+                ) : (
+                  <ColorGamutSolid points={colorPoints2} opacity={solidOpacity * 0.7} />
+                )
               ) : (
                 <ColorGamut points={colorPoints2} color="cyan" opacity={0.4} />
               )}
