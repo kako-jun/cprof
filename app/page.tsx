@@ -6,6 +6,8 @@ import { parseICCProfile, type ICCProfile } from '@/lib/icc-parser'
 import ColorSpace2D from '@/components/ColorSpace2D'
 import GamutCoverageDashboard from '@/components/GamutCoverageDashboard'
 import ShareButton from '@/components/ShareButton'
+import ExportButton from '@/components/ExportButton'
+import ColorVisionSimulator from '@/components/ColorVisionSimulator'
 import { extractProfileFromURL, base64ToFile } from '@/lib/profile-sharing'
 
 // Three.jsコンポーネントはクライアントサイドのみで動作
@@ -331,6 +333,10 @@ export default function Home() {
                       file={selectedFile}
                       profileName={profile.description || selectedFile.name}
                     />
+                    <ExportButton
+                      profile={profile}
+                      profileName={profile.description || selectedFile.name}
+                    />
                     <label
                       htmlFor="file-input-2"
                       className="cursor-pointer px-3 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
@@ -400,10 +406,16 @@ export default function Home() {
 
                 <div className="ml-4 flex gap-2">
                   {profile2 && (
-                    <ShareButton
-                      file={selectedFile2}
-                      profileName={profile2.description || selectedFile2.name}
-                    />
+                    <>
+                      <ShareButton
+                        file={selectedFile2}
+                        profileName={profile2.description || selectedFile2.name}
+                      />
+                      <ExportButton
+                        profile={profile2}
+                        profileName={profile2.description || selectedFile2.name}
+                      />
+                    </>
                   )}
                   <button
                     onClick={clearComparison}
@@ -462,6 +474,16 @@ export default function Home() {
               <GamutCoverageDashboard
                 colorPoints={profile2.colorPoints}
                 profileName={profile2.description || selectedFile2?.name}
+              />
+            </div>
+          )}
+
+          {/* 色覚シミュレーション */}
+          {profile && (
+            <div className="w-full mt-8">
+              <ColorVisionSimulator
+                colorPoints={profile.colorPoints}
+                profileName={profile.description || selectedFile?.name}
               />
             </div>
           )}
