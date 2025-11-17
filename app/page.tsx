@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import { parseICCProfile, type ICCProfile } from '@/lib/icc-parser'
 import ColorSpace2D from '@/components/ColorSpace2D'
+import GamutCoverageDashboard from '@/components/GamutCoverageDashboard'
+import ShareButton from '@/components/ShareButton'
+import { extractProfileFromURL, base64ToFile } from '@/lib/profile-sharing'
 
 // Three.jsコンポーネントはクライアントサイドのみで動作
 const ColorSpaceViewer = dynamic(() => import('@/components/ColorSpaceViewer'), {
@@ -133,6 +136,30 @@ export default function Home() {
     setProfile2(null)
     setCompareMode(false)
   }
+
+  // URLからプロファイルを読み込む
+  useEffect(() => {
+    const loadProfileFromURL = async () => {
+      const { profile: profileData, name } = extractProfileFromURL()
+
+      if (profileData && name) {
+        try {
+          setIsLoading(true)
+          const file = base64ToFile(profileData, name)
+          setSelectedFile(file)
+          const parsedProfile = await parseICCProfile(file)
+          setProfile(parsedProfile)
+        } catch (err) {
+          console.error('Failed to load profile from URL:', err)
+          setError('URLからのプロファイル読み込みに失敗しました')
+        } finally {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    loadProfileFromURL()
+  }, [])
 
   return (
     <div className="min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -299,7 +326,11 @@ export default function Home() {
                 </div>
 
                 {!compareMode && profile && (
-                  <div className="ml-4">
+                  <div className="ml-4 flex gap-2">
+                    <ShareButton
+                      file={selectedFile}
+                      profileName={profile.description || selectedFile.name}
+                    />
                     <label
                       htmlFor="file-input-2"
                       className="cursor-pointer px-3 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
@@ -367,12 +398,20 @@ export default function Home() {
                   )}
                 </div>
 
-                <button
-                  onClick={clearComparison}
-                  className="ml-4 px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
-                >
-                  削除
-                </button>
+                <div className="ml-4 flex gap-2">
+                  {profile2 && (
+                    <ShareButton
+                      file={selectedFile2}
+                      profileName={profile2.description || selectedFile2.name}
+                    />
+                  )}
+                  <button
+                    onClick={clearComparison}
+                    className="px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+                  >
+                    削除
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -406,6 +445,26 @@ export default function Home() {
               </div>
             )}
           </div>
+
+          {/* 色域カバレッジダッシュボード */}
+          {profile && (
+            <div className="w-full mt-8">
+              <GamutCoverageDashboard
+                colorPoints={profile.colorPoints}
+                profileName={profile.description || selectedFile?.name}
+              />
+            </div>
+          )}
+
+          {/* 色域カバレッジ比較 */}
+          {profile2 && (
+            <div className="w-full mt-8">
+              <GamutCoverageDashboard
+                colorPoints={profile2.colorPoints}
+                profileName={profile2.description || selectedFile2?.name}
+              />
+            </div>
+          )}
 
           {/* 2D色空間表示 */}
           {show2D && profile && (
