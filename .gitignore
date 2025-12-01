@@ -51,3 +51,4 @@ next-env.d.ts
 *.swo
 *~
 .claude/settings.local.json
+.serena/
