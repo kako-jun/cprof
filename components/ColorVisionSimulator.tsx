@@ -15,11 +15,6 @@ interface ColorVisionSimulatorProps {
   profileName?: string
 }
 
-/**
- * 色覚シミュレーター
- *
- * 異なる色覚タイプでの見え方を可視化
- */
 export default function ColorVisionSimulator({
   colorPoints,
   profileName,
@@ -37,49 +32,40 @@ export default function ColorVisionSimulator({
     'achromatopsia',
   ]
 
-  // 各色覚タイプでのプライマリカラーのシミュレーション
   const simulatedColors = useMemo(() => {
-    const primaries = colorPoints.slice(0, 3) // R, G, B
+    const primaries = colorPoints.slice(0, 3)
 
-    return visionTypes.map((visionType) => {
-      return {
-        visionType,
-        colors: primaries.map((point) => {
-          if (!point.color) return null
-
-          const rgb = hexToRgb(point.color)
-          const simulated = simulateColorVision(rgb, visionType)
-
-          return {
-            original: point.color,
-            simulated: rgbToHex(simulated),
-            label: point.label || '',
-          }
-        }),
-      }
-    })
+    return visionTypes.map((visionType) => ({
+      visionType,
+      colors: primaries.map((point) => {
+        if (!point.color) return null
+        const rgb = hexToRgb(point.color)
+        const simulated = simulateColorVision(rgb, visionType)
+        return {
+          original: point.color,
+          simulated: rgbToHex(simulated),
+          label: point.label || '',
+        }
+      }),
+    }))
   }, [colorPoints])
 
   const selectedSimulation = simulatedColors.find((s) => s.visionType === selectedVision)
 
   return (
-    <div className="w-full bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg">
-      <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">
-        色覚シミュレーション
-      </h2>
+    <div className="w-full">
+      <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-4">
+        Color Vision Simulation
+        {profileName && <span className="ml-3 text-label normal-case tracking-normal">{profileName}</span>}
+      </p>
 
-      {profileName && (
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">プロファイル: {profileName}</p>
-      )}
-
-      <div className="mb-6">
-        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-          色覚タイプを選択:
-        </label>
+      {/* Vision type selector */}
+      <div className="mb-5">
+        <p className="text-[10px] font-mono text-dim mb-2">vision type</p>
         <select
           value={selectedVision}
           onChange={(e) => setSelectedVision(e.target.value as ColorVisionType)}
-          className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 bg-[#111] border border-[#2a2a2a] text-xs font-mono text-label focus:border-[#444] transition-colors"
         >
           {visionTypes.map((type) => (
             <option key={type} value={type}>
@@ -89,49 +75,35 @@ export default function ColorVisionSimulator({
         </select>
       </div>
 
-      {/* カラー比較 */}
-      <div className="space-y-4 mb-6">
-        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-          プライマリカラーの見え方:
-        </h3>
+      {/* Color swatches — the actual colors are the content, UI stays neutral */}
+      <div className="space-y-4 mb-5">
         {selectedSimulation?.colors.map((color, index) => {
           if (!color) return null
 
           return (
-            <div key={index} className="flex items-center gap-4">
-              <div className="flex-1">
-                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
-                  {color.label}
-                </p>
-                <div className="flex gap-2 items-center">
-                  {/* オリジナル */}
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">通常色覚</p>
-                    <div
-                      className="h-12 rounded border-2 border-gray-300 dark:border-gray-600"
-                      style={{ backgroundColor: color.original }}
-                    ></div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-mono">
-                      {color.original}
-                    </p>
-                  </div>
+            <div key={index}>
+              <p className="text-[10px] font-mono text-dim mb-2">{color.label}</p>
+              <div className="flex items-stretch gap-3">
+                {/* Original swatch */}
+                <div className="flex-1">
+                  <div
+                    className="h-10 w-full"
+                    style={{ backgroundColor: color.original }}
+                  />
+                  <p className="text-[10px] font-mono text-dim mt-1">normal</p>
+                  <p className="text-[10px] font-mono text-label">{color.original}</p>
+                </div>
 
-                  {/* 矢印 */}
-                  <div className="text-2xl text-gray-400">→</div>
+                <div className="flex items-center text-dim text-xs font-mono self-center">→</div>
 
-                  {/* シミュレーション */}
-                  <div className="flex-1">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                      {COLOR_VISION_DESCRIPTIONS[selectedVision]}
-                    </p>
-                    <div
-                      className="h-12 rounded border-2 border-gray-300 dark:border-gray-600"
-                      style={{ backgroundColor: color.simulated }}
-                    ></div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-mono">
-                      {color.simulated}
-                    </p>
-                  </div>
+                {/* Simulated swatch */}
+                <div className="flex-1">
+                  <div
+                    className="h-10 w-full"
+                    style={{ backgroundColor: color.simulated }}
+                  />
+                  <p className="text-[10px] font-mono text-dim mt-1">simulated</p>
+                  <p className="text-[10px] font-mono text-label">{color.simulated}</p>
                 </div>
               </div>
             </div>
@@ -139,65 +111,17 @@ export default function ColorVisionSimulator({
         })}
       </div>
 
-      {/* 説明 */}
-      <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
-        <h3 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-2">
-          色覚タイプについて
-        </h3>
-        <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-          {selectedVision === 'normal' && (
-            <p>
-              <strong>正常色覚（3色型）:</strong>{' '}
-              通常の色覚。L錐体（赤）、M錐体（緑）、S錐体（青）の3種類が正常に機能。
-            </p>
-          )}
-          {selectedVision === 'protanopia' && (
-            <p>
-              <strong>1型色覚（P型・赤色盲）:</strong>{' '}
-              L錐体（赤）が欠損。赤と緑の区別が困難。日本人男性の約1.5%。
-            </p>
-          )}
-          {selectedVision === 'deuteranopia' && (
-            <p>
-              <strong>2型色覚（D型・緑色盲）:</strong>{' '}
-              M錐体（緑）が欠損。赤と緑の区別が困難。日本人男性の約1.0%。
-            </p>
-          )}
-          {selectedVision === 'tritanopia' && (
-            <p>
-              <strong>3型色覚（T型・青色盲）:</strong>{' '}
-              S錐体（青）が欠損。青と黄の区別が困難。非常に稀（0.01%未満）。
-            </p>
-          )}
-          {selectedVision === 'protanomaly' && (
-            <p>
-              <strong>1型2色覚（赤色弱）:</strong> L錐体（赤）の感度が低い。赤の識別がやや困難。
-            </p>
-          )}
-          {selectedVision === 'deuteranomaly' && (
-            <p>
-              <strong>2型2色覚（緑色弱）:</strong>{' '}
-              M錐体（緑）の感度が低い。緑の識別がやや困難。最も一般的な色覚異常。
-            </p>
-          )}
-          {selectedVision === 'tritanomaly' && (
-            <p>
-              <strong>3型2色覚（青色弱）:</strong> S錐体（青）の感度が低い。青の識別がやや困難。
-            </p>
-          )}
-          {selectedVision === 'achromatopsia' && (
-            <p>
-              <strong>全色盲（1色型）:</strong>{' '}
-              すべての錐体が機能しない。世界がモノクロに見える。非常に稀。
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-4 p-3 bg-green-50 dark:bg-green-900 rounded">
-        <p className="text-xs text-green-800 dark:text-green-200">
-          <strong>アクセシビリティ:</strong>{' '}
-          デザインやカラースキームを作成する際、異なる色覚タイプの人々にも識別可能かを確認することが重要です。
+      {/* Description */}
+      <div className="p-3 bg-[#0e0e0e] border border-[#1e1e1e]">
+        <p className="text-[10px] font-mono text-dim leading-relaxed">
+          {selectedVision === 'normal' && 'Normal trichromacy — L, M, S cones all functional.'}
+          {selectedVision === 'protanopia' && 'Protanopia (P-type) — L cone absent. Red-green confusion. ~1.5% of males (JP).'}
+          {selectedVision === 'deuteranopia' && 'Deuteranopia (D-type) — M cone absent. Red-green confusion. ~1.0% of males (JP).'}
+          {selectedVision === 'tritanopia' && 'Tritanopia (T-type) — S cone absent. Blue-yellow confusion. Very rare (<0.01%).'}
+          {selectedVision === 'protanomaly' && 'Protanomaly — reduced L cone sensitivity. Mild red discrimination loss.'}
+          {selectedVision === 'deuteranomaly' && 'Deuteranomaly — reduced M cone sensitivity. Most common color vision deficiency.'}
+          {selectedVision === 'tritanomaly' && 'Tritanomaly — reduced S cone sensitivity. Mild blue discrimination loss.'}
+          {selectedVision === 'achromatopsia' && 'Achromatopsia — all cones non-functional. World appears monochrome. Very rare.'}
         </p>
       </div>
     </div>

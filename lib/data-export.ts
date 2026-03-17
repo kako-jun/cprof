@@ -35,17 +35,20 @@ export function exportAsJSON(profile: ICCProfile): string {
       area: gamutArea,
       coverages,
     },
-    colorPoints: profile.colorPoints.map((p) => ({
-      x: p.x,
-      y: p.y,
-      z: p.z,
-      label: p.label,
-      color: p.color,
-      chromaticity: {
-        x: p.x / (p.x + p.y + p.z),
-        y: p.y / (p.x + p.y + p.z),
-      },
-    })),
+    colorPoints: profile.colorPoints.map((p) => {
+      const sum = p.x + p.y + p.z
+      return {
+        x: p.x,
+        y: p.y,
+        z: p.z,
+        label: p.label,
+        color: p.color,
+        chromaticity: {
+          x: sum > 0 ? p.x / sum : 0,
+          y: sum > 0 ? p.y / sum : 0,
+        },
+      }
+    }),
   }
 
   return JSON.stringify(data, null, 2)

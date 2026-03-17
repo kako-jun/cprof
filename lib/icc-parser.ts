@@ -233,11 +233,35 @@ export async function parseICCProfile(file: File): Promise<ICCProfile> {
 
   if (descTag) {
     try {
-      // 簡易的なdesc読み取り（ASCII）
       const descType = readString(arrayBuffer, descTag.offset, 4);
       if (descType === 'desc') {
+        // ICC v2: textDescriptionType — offset+8は長さ(u32)、offset+12からASCII文字列
         const descLength = readUInt32BE(arrayBuffer, descTag.offset + 8);
-        description = readString(arrayBuffer, descTag.offset + 12, Math.min(descLength, 100));
+        const safeLength = Math.min(descLength, 100, descTag.size - 12);
+        if (safeLength > 0) {
+          const candidate = readString(arrayBuffer, descTag.offset + 12, safeLength);
+          if (candidate.length > 0) description = candidate;
+        }
+      } else if (descType === 'mluc') {
+        // ICC v4: multiLocalizedUnicodeType
+        // offset+8: レコード数(u32), offset+12: レコードサイズ(u32)=12
+        // 最初のレコード: offset+16 (言語2B, 国2B, 長さ4B, データオフセット4B)
+        const recordCount = readUInt32BE(arrayBuffer, descTag.offset + 8);
+        if (recordCount > 0) {
+          const strLength = readUInt32BE(arrayBuffer, descTag.offset + 20); // バイト数
+          const strOffset = readUInt32BE(arrayBuffer, descTag.offset + 24); // タグ先頭からの相対オフセット
+          const absOffset = descTag.offset + strOffset;
+          const charCount = Math.min(strLength / 2, 100);
+          // UTF-16BE → 文字列
+          const view = new DataView(arrayBuffer);
+          let result = '';
+          for (let i = 0; i < charCount; i++) {
+            const code = view.getUint16(absOffset + i * 2, false);
+            if (code === 0) break;
+            result += String.fromCodePoint(code);
+          }
+          if (result.length > 0) description = result;
+        }
       }
     } catch (e) {
       console.warn('Failed to read description:', e);

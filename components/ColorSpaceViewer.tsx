@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, PerspectiveCamera, Line, Html } from '@react-three/drei'
 import * as THREE from 'three'
@@ -75,13 +75,14 @@ function ColorPoints({
 function ColorGamutSolid({ points, opacity = 0.8 }: { points: ColorPoint[]; opacity?: number }) {
   if (points.length < 8) return null
 
-  const red = points[0]
-  const green = points[1]
-  const blue = points[2]
-  const black = points[7]
-
   // RGB色空間を表現する三角錐のジオメトリを作成
+  // points配列自体をdepに使うことで不要な再生成を防ぐ
   const geometry = useMemo(() => {
+    const red = points[0]
+    const green = points[1]
+    const blue = points[2]
+    const black = points[7]
+
     const geo = new THREE.BufferGeometry()
 
     // 頂点座標
@@ -139,7 +140,15 @@ function ColorGamutSolid({ points, opacity = 0.8 }: { points: ColorPoint[]; opac
     geo.computeVertexNormals()
 
     return geo
-  }, [red, green, blue, black])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points])
+
+  // ジオメトリのメモリを明示的に解放
+  useEffect(() => {
+    return () => {
+      geometry.dispose()
+    }
+  }, [geometry])
 
   return (
     <mesh geometry={geometry}>
@@ -177,7 +186,17 @@ function ColorGamutFullSolid({
   const black = points[7] // K
 
   // RGB立方体の全ての面を表現するジオメトリを作成
+  // points配列自体をdepに使うことで不要な再生成を防ぐ
   const geometry = useMemo(() => {
+    const red = points[0]
+    const green = points[1]
+    const blue = points[2]
+    const yellow = points[3]
+    const cyan = points[4]
+    const magenta = points[5]
+    const white = points[6]
+    const black = points[7]
+
     const geo = new THREE.BufferGeometry()
 
     // 頂点座標（各面ごとに頂点を定義）
@@ -230,7 +249,15 @@ function ColorGamutFullSolid({
     geo.computeVertexNormals()
 
     return geo
-  }, [red, green, blue, yellow, cyan, magenta, white, black])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points])
+
+  // ジオメトリのメモリを明示的に解放
+  useEffect(() => {
+    return () => {
+      geometry.dispose()
+    }
+  }, [geometry])
 
   return (
     <mesh geometry={geometry}>
@@ -265,17 +292,17 @@ function ColorGamut({
 
   if (points.length < 8) return null
 
-  const red = points[0]
-  const green = points[1]
-  const blue = points[2]
-  const yellow = points[3]
-  const cyan = points[4]
-  const magenta = points[5]
-  const white = points[6]
-  const black = points[7]
-
   // 三角形の辺を描画
+  // points配列自体をdepに使うことで不要な再生成を防ぐ
   const edges = useMemo(() => {
+    const red = points[0]
+    const green = points[1]
+    const blue = points[2]
+    const yellow = points[3]
+    const cyan = points[4]
+    const magenta = points[5]
+    const black = points[7]
+
     return [
       // 上面（最大輝度）の三角形
       [
@@ -331,7 +358,8 @@ function ColorGamut({
         [magenta.x, magenta.y, magenta.z],
       ],
     ]
-  }, [red, green, blue, yellow, cyan, magenta, white, black])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [points])
 
   return (
     <>
@@ -515,34 +543,36 @@ export default function ColorSpaceViewer({
         <gridHelper args={[2, 20, 0x444444, 0x222222]} />
       </Canvas>
 
-      {/* プロファイル名の表示 */}
+      {/* Profile name overlay */}
       {profileName && (
-        <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded text-sm space-y-1">
-          <div>📊 {profileName}</div>
-          {profileName2 && compareMode && <div className="text-cyan-300">📊 {profileName2}</div>}
+        <div className="absolute top-3 left-3 bg-black bg-opacity-60 px-2.5 py-1.5 text-xs font-mono space-y-0.5">
+          <div className="text-[#aaa]">{profileName}</div>
+          {profileName2 && compareMode && (
+            <div className="text-[#777]">B: {profileName2}</div>
+          )}
         </div>
       )}
 
-      {/* 比較モード表示 */}
+      {/* Compare mode legend */}
       {compareMode && (
-        <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded text-xs">
-          <div className="font-semibold mb-1">比較モード</div>
-          <div>白: プロファイル1</div>
-          <div className="text-cyan-300">シアン: プロファイル2</div>
+        <div className="absolute top-3 right-3 bg-black bg-opacity-60 px-2.5 py-1.5 text-[10px] font-mono space-y-0.5">
+          <div className="text-[#555] uppercase tracking-widest">compare</div>
+          <div className="text-[#aaa]">A — white</div>
+          <div className="text-[#777]">B — cyan</div>
         </div>
       )}
 
-      {/* 操作説明とスクリーンショットボタン */}
-      <div className="absolute bottom-4 right-4 space-y-2">
-        <div className="bg-black bg-opacity-50 text-white px-3 py-2 rounded text-xs">
-          <div>🖱️ ドラッグ: 回転</div>
-          <div>🔍 ホイール: ズーム</div>
+      {/* Controls hint + screenshot */}
+      <div className="absolute bottom-3 right-3 space-y-1.5">
+        <div className="bg-black bg-opacity-60 px-2.5 py-1.5 text-[10px] font-mono text-[#444] space-y-0.5">
+          <div>drag — rotate</div>
+          <div>scroll — zoom</div>
         </div>
         <button
           onClick={handleScreenshot}
-          className="w-full px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors flex items-center justify-center gap-2"
+          className="w-full px-2.5 py-1.5 bg-black bg-opacity-60 border border-[#2a2a2a] hover:border-[#444] text-[10px] font-mono text-[#555] hover:text-[#aaa] transition-colors"
         >
-          📸 スクリーンショット
+          screenshot
         </button>
       </div>
     </div>

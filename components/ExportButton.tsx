@@ -9,36 +9,15 @@ interface ExportButtonProps {
   profileName?: string
 }
 
-/**
- * データエクスポートボタン
- *
- * プロファイルデータを様々な形式でエクスポート
- */
 export default function ExportButton({ profile, profileName }: ExportButtonProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>('json')
 
   const formats: { value: ExportFormat; label: string; description: string }[] = [
-    {
-      value: 'json',
-      label: 'JSON',
-      description: 'プログラムで読み込み可能な構造化データ',
-    },
-    {
-      value: 'csv',
-      label: 'CSV',
-      description: 'Excelやスプレッドシートで開ける表形式データ',
-    },
-    {
-      value: 'xyz',
-      label: 'XYZ点群',
-      description: '3D可視化ツール（Blender等）で使える点群データ',
-    },
-    {
-      value: 'summary',
-      label: 'サマリーレポート',
-      description: '人間が読めるテキスト形式のレポート',
-    },
+    { value: 'json', label: 'JSON', description: 'structured data for programmatic use' },
+    { value: 'csv', label: 'CSV', description: 'tabular format for spreadsheets' },
+    { value: 'xyz', label: 'XYZ point cloud', description: 'for 3D tools (Blender etc.)' },
+    { value: 'summary', label: 'text report', description: 'human-readable summary' },
   ]
 
   const handleExport = () => {
@@ -47,7 +26,7 @@ export default function ExportButton({ profile, profileName }: ExportButtonProps
       setIsOpen(false)
     } catch (error) {
       console.error('Export failed:', error)
-      alert('エクスポートに失敗しました')
+      alert('Export failed')
     }
   }
 
@@ -55,43 +34,38 @@ export default function ExportButton({ profile, profileName }: ExportButtonProps
     <div>
       <button
         onClick={() => setIsOpen(true)}
-        className="px-3 py-1.5 text-xs bg-green-500 hover:bg-green-600 text-white rounded transition-colors"
-        title="データをエクスポート"
+        className="px-2 py-1.5 text-xs font-mono text-label border border-[#2e2e2e] hover:border-[#444] hover:text-foreground transition-colors w-full"
       >
-        エクスポート
+        export
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
+          <div className="bg-[#111] border border-[#2a2a2a] p-6 max-w-md w-full">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-200">
-                データエクスポート
-              </h3>
+              <p className="text-xs font-mono text-foreground uppercase tracking-widest">Export Data</p>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className="text-dim hover:text-foreground font-mono text-sm transition-colors"
               >
-                ✕
+                x
               </button>
             </div>
 
             {profileName && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{profileName}</p>
+              <p className="text-xs font-mono text-label mb-4">{profileName}</p>
             )}
 
-            <div className="mb-6">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
-                エクスポート形式を選択:
-              </label>
-              <div className="space-y-2">
+            <div className="mb-5">
+              <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-3">format</p>
+              <div className="space-y-1">
                 {formats.map((format) => (
                   <label
                     key={format.value}
-                    className={`flex items-start p-3 rounded-lg border-2 cursor-pointer transition-colors ${
+                    className={`flex items-start p-2.5 cursor-pointer border transition-colors ${
                       selectedFormat === format.value
-                        ? 'border-green-500 bg-green-50 dark:bg-green-900'
-                        : 'border-gray-300 dark:border-gray-600 hover:border-green-300'
+                        ? 'border-[#444] bg-[#1a1a1a]'
+                        : 'border-[#1e1e1e] hover:border-[#2e2e2e]'
                     }`}
                   >
                     <input
@@ -100,40 +74,35 @@ export default function ExportButton({ profile, profileName }: ExportButtonProps
                       value={format.value}
                       checked={selectedFormat === format.value}
                       onChange={(e) => setSelectedFormat(e.target.value as ExportFormat)}
-                      className="mt-1 mr-3"
+                      className="mt-0.5 mr-3 accent-[#666]"
                     />
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-gray-800 dark:text-gray-200">
-                        {format.label}
-                      </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                        {format.description}
-                      </div>
+                    <div>
+                      <p className="text-xs font-mono text-foreground">{format.label}</p>
+                      <p className="text-[10px] font-mono text-dim mt-0.5">{format.description}</p>
                     </div>
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="p-3 bg-blue-50 dark:bg-blue-900 rounded mb-4">
-              <p className="text-xs text-blue-800 dark:text-blue-200">
-                <strong>ヒント:</strong>{' '}
-                JSON形式は他のツールとの連携に、CSV形式はデータ分析に、XYZ形式は3D可視化に適しています。
+            <div className="p-3 bg-[#0e0e0e] border border-[#1e1e1e] mb-4">
+              <p className="text-[10px] font-mono text-dim leading-relaxed">
+                JSON: tool integration &nbsp;|&nbsp; CSV: analysis &nbsp;|&nbsp; XYZ: 3D viz
               </p>
             </div>
 
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setIsOpen(false)}
-                className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded transition-colors"
+                className="px-4 py-2 text-xs font-mono text-label border border-[#2a2a2a] hover:border-[#444] hover:text-foreground transition-colors"
               >
-                キャンセル
+                cancel
               </button>
               <button
                 onClick={handleExport}
-                className="px-4 py-2 text-sm bg-green-500 hover:bg-green-600 text-white rounded transition-colors font-semibold"
+                className="px-4 py-2 text-xs font-mono text-foreground border border-[#3a3a3a] hover:border-[#666] transition-colors"
               >
-                ダウンロード
+                download
               </button>
             </div>
           </div>

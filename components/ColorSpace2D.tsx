@@ -81,6 +81,33 @@ const SPECTRAL_LOCUS = [
 ]
 
 /**
+ * XYZからCIELab (a*, b*) へ変換（D50白色点基準）
+ * ICCプロファイルのXYZはD50-adapted PCS値
+ */
+function xyzToLab(x: number, y: number, z: number): { L: number; a: number; b: number } {
+  // D50白色点 (ICC PCS標準)
+  const Xn = 0.9642
+  const Yn = 1.0000
+  const Zn = 0.8251
+
+  const f = (t: number) => {
+    const delta = 6 / 29
+    if (t > delta * delta * delta) return Math.cbrt(t)
+    return t / (3 * delta * delta) + 4 / 29
+  }
+
+  const fx = f(x / Xn)
+  const fy = f(y / Yn)
+  const fz = f(z / Zn)
+
+  const L = 116 * fy - 16
+  const a = 500 * (fx - fy)
+  const b = 200 * (fy - fz)
+
+  return { L, a, b }
+}
+
+/**
  * XYZ色空間からsRGBへの変換
  */
 function xyzToRgb(x: number, y: number, z: number): string {
@@ -160,25 +187,26 @@ export default function ColorSpace2D({ colorPoints, profileName, type }: ColorSp
       case 'lab':
         return {
           title: 'Lab a*b*平面',
-          data: colorPoints.map((p) => ({
-            // 簡易的なXYZからLabへの変換（実際はもっと複雑）
-            x: (p.x - p.y) * 100,
-            y: (p.y - p.z) * 100,
-            color: p.color,
-            label: p.label,
-          })),
+          data: colorPoints.map((p) => {
+            const { a, b } = xyzToLab(p.x, p.y, p.z)
+            return {
+              x: a,
+              y: b,
+              color: p.color,
+              label: p.label,
+            }
+          }),
           xLabel: 'a*',
           yLabel: 'b*',
-          xRange: [-100, 100] as [number, number],
-          yRange: [-100, 100] as [number, number],
+          xRange: [-150, 150] as [number, number],
+          yRange: [-150, 150] as [number, number],
         }
 
       case 'lch':
         return {
           title: '色相環（LCh）',
           data: colorPoints.map((p) => {
-            const a = (p.x - p.y) * 100
-            const b = (p.y - p.z) * 100
+            const { a, b } = xyzToLab(p.x, p.y, p.z)
             const c = Math.sqrt(a * a + b * b)
             const h = Math.atan2(b, a)
             return {
@@ -190,8 +218,8 @@ export default function ColorSpace2D({ colorPoints, profileName, type }: ColorSp
           }),
           xLabel: 'C*cos(h)',
           yLabel: 'C*sin(h)',
-          xRange: [-100, 100] as [number, number],
-          yRange: [-100, 100] as [number, number],
+          xRange: [-150, 150] as [number, number],
+          yRange: [-150, 150] as [number, number],
         }
 
       case 'rgb-xy':
@@ -300,8 +328,8 @@ export default function ColorSpace2D({ colorPoints, profileName, type }: ColorSp
 
   return (
     <div className="flex flex-col items-center">
-      <h3 className="text-sm font-semibold mb-2">{title}</h3>
-      <svg width={width} height={height} className="border border-gray-300 dark:border-gray-700">
+      <p className="text-[10px] font-mono text-[#555] uppercase tracking-widest mb-2">{title}</p>
+      <svg width={width} height={height} className="border border-[#1e1e1e]">
         {/* 背景 */}
         <rect width={width} height={height} fill="black" />
 

@@ -10,22 +10,21 @@ import ExportButton from '@/components/ExportButton'
 import ColorVisionSimulator from '@/components/ColorVisionSimulator'
 import { extractProfileFromURL, base64ToFile } from '@/lib/profile-sharing'
 
-// Three.jsコンポーネントはクライアントサイドのみで動作
 const ColorSpaceViewer = dynamic(() => import('@/components/ColorSpaceViewer'), {
   ssr: false,
   loading: () => (
-    <div className="w-full h-full flex items-center justify-center text-gray-600">
-      読み込み中...
+    <div className="w-full h-full flex items-center justify-center text-label text-xs tracking-widest uppercase">
+      loading...
     </div>
   ),
 })
 
 const SAMPLE_PROFILES = [
-  { name: 'sRGB', file: 'sRGB-v4.icc', description: '標準色域（Web）' },
-  { name: 'Adobe RGB', file: 'AdobeCompat-v4.icc', description: '広色域（印刷）' },
-  { name: 'Display P3', file: 'DisplayP3-v4.icc', description: 'Apple向け広色域' },
-  { name: 'Rec.2020', file: 'Rec2020-v4.icc', description: '4K/HDR映像用' },
-  { name: 'ProPhoto RGB', file: 'ProPhoto-v4.icc', description: '超広色域（写真編集）' },
+  { name: 'sRGB', file: 'sRGB-v4.icc', description: 'Web standard' },
+  { name: 'Adobe RGB', file: 'AdobeCompat-v4.icc', description: 'Wide gamut (print)' },
+  { name: 'Display P3', file: 'DisplayP3-v4.icc', description: 'Apple wide gamut' },
+  { name: 'Rec.2020', file: 'Rec2020-v4.icc', description: '4K/HDR video' },
+  { name: 'ProPhoto RGB', file: 'ProPhoto-v4.icc', description: 'Ultra wide (photo editing)' },
 ]
 
 export default function Home() {
@@ -59,7 +58,7 @@ export default function Home() {
       setProfile(parsedProfile)
     } catch (err) {
       console.error('Sample profile loading error:', err)
-      setError(err instanceof Error ? err.message : 'サンプルプロファイルの読み込みに失敗しました')
+      setError(err instanceof Error ? err.message : 'Failed to load sample profile')
       setProfile(null)
     } finally {
       setIsLoading(false)
@@ -79,7 +78,7 @@ export default function Home() {
       setProfile(parsedProfile)
     } catch (err) {
       console.error('ICC parsing error:', err)
-      setError(err instanceof Error ? err.message : 'プロファイルの解析に失敗しました')
+      setError(err instanceof Error ? err.message : 'Failed to parse profile')
       setProfile(null)
     } finally {
       setIsLoading(false)
@@ -100,7 +99,7 @@ export default function Home() {
         setProfile(parsedProfile)
       } catch (err) {
         console.error('ICC parsing error:', err)
-        setError(err instanceof Error ? err.message : 'プロファイルの解析に失敗しました')
+        setError(err instanceof Error ? err.message : 'Failed to parse profile')
         setProfile(null)
       } finally {
         setIsLoading(false)
@@ -126,7 +125,7 @@ export default function Home() {
       setCompareMode(true)
     } catch (err) {
       console.error('ICC parsing error:', err)
-      setError(err instanceof Error ? err.message : 'プロファイルの解析に失敗しました')
+      setError(err instanceof Error ? err.message : 'Failed to parse profile')
       setProfile2(null)
     } finally {
       setIsLoading2(false)
@@ -139,7 +138,6 @@ export default function Home() {
     setCompareMode(false)
   }
 
-  // URLからプロファイルを読み込む
   useEffect(() => {
     const loadProfileFromURL = async () => {
       const { profile: profileData, name } = extractProfileFromURL()
@@ -153,7 +151,7 @@ export default function Home() {
           setProfile(parsedProfile)
         } catch (err) {
           console.error('Failed to load profile from URL:', err)
-          setError('URLからのプロファイル読み込みに失敗しました')
+          setError('Failed to load profile from URL')
         } finally {
           setIsLoading(false)
         }
@@ -164,14 +162,32 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 items-center">
-        <h1 className="text-4xl font-bold text-center">cprof</h1>
-        <p className="text-center text-gray-600 dark:text-gray-400">Color Profile 3D Viewer</p>
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
 
-        <div className="flex flex-col gap-4 items-center w-full max-w-4xl">
+      {/* Top bar — wordmark + status */}
+      <header className="flex items-center justify-between px-5 py-3 border-b border-[#1e1e1e]">
+        <div className="flex items-center gap-4">
+          <span className="text-sm font-mono tracking-[0.2em] text-white uppercase">cprof</span>
+          <span className="text-xs text-label font-mono">ICC Color Profile Visualizer</span>
+        </div>
+        <a
+          href="https://github.com/kako-jun/cprof"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-label font-mono hover:text-foreground transition-colors"
+        >
+          GitHub
+        </a>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* LEFT SIDEBAR — controls */}
+        <aside className="w-64 shrink-0 bg-[#0e0e0e] border-r border-[#1e1e1e] flex flex-col overflow-y-auto">
+
+          {/* Drop zone */}
           <div
-            className="w-full border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-8 text-center hover:border-gray-400 dark:hover:border-gray-600 transition-colors"
+            className="mx-3 mt-3 border border-dashed border-[#2e2e2e] p-4 text-center cursor-pointer hover:border-[#444] transition-colors"
             onDrop={handleDrop}
             onDragOver={handleDragOver}
           >
@@ -183,261 +199,210 @@ export default function Home() {
               id="file-input"
             />
             <label htmlFor="file-input" className="cursor-pointer block">
-              <div className="text-gray-600 dark:text-gray-400">
-                <p className="mb-2">ICC/ICMプロファイルをドロップ</p>
-                <p className="text-sm">またはクリックして選択</p>
-              </div>
+              <p className="text-xs text-label font-mono leading-relaxed">
+                drop .icc / .icm<br />
+                or click to open
+              </p>
             </label>
           </div>
 
-          {/* サンプルプロファイル選択 */}
-          <div className="w-full">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">またはサンプルを試す:</p>
-            <div className="flex flex-wrap gap-2">
+          {/* Sample presets */}
+          <div className="px-3 mt-4">
+            <p className="text-[10px] text-dim font-mono uppercase tracking-widest mb-2">Presets</p>
+            <div className="flex flex-col gap-1">
               {SAMPLE_PROFILES.map((sample) => (
                 <button
                   key={sample.file}
                   onClick={() => loadSampleProfile(sample.file)}
-                  className="px-3 py-1.5 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 rounded transition-colors"
-                  title={sample.description}
                   disabled={isLoading}
+                  title={sample.description}
+                  className="text-left px-2 py-1.5 text-xs font-mono text-label hover:text-foreground hover:bg-[#1a1a1a] transition-colors disabled:opacity-40"
                 >
                   {sample.name}
+                  <span className="text-[10px] text-dim ml-2">{sample.description}</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* 表示設定 */}
-          <div className="w-full space-y-3 border-t border-gray-300 dark:border-gray-700 pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">表示設定</h3>
+          {/* Divider */}
+          <div className="border-t border-[#1e1e1e] mx-3 mt-4" />
 
-            {/* グラデーションモードトグル */}
-            <div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={gradientMode}
-                  onChange={(e) => setGradientMode(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  🎨 グラデーション着色モード
-                </span>
-              </label>
-            </div>
+          {/* Display settings */}
+          <div className="px-3 mt-4">
+            <p className="text-[10px] text-dim font-mono uppercase tracking-widest mb-3">Render</p>
 
-            {/* 全色域モードトグル */}
+            <label className="flex items-center gap-2 cursor-pointer mb-3 group">
+              <input
+                type="checkbox"
+                checked={gradientMode}
+                onChange={(e) => setGradientMode(e.target.checked)}
+              />
+              <span className="text-xs font-mono text-label group-hover:text-foreground transition-colors">
+                gradient solid
+              </span>
+            </label>
+
             {gradientMode && (
-              <div>
-                <label className="flex items-center gap-2 cursor-pointer">
+              <>
+                <label className="flex items-center gap-2 cursor-pointer mb-3 ml-4 group">
                   <input
                     type="checkbox"
                     checked={fullGamutMode}
                     onChange={(e) => setFullGamutMode(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
-                    🔷 全色域表示（8点）
+                  <span className="text-xs font-mono text-label group-hover:text-foreground transition-colors">
+                    full gamut (8pt)
                   </span>
                 </label>
-                <p className="text-xs text-gray-500 dark:text-gray-400 ml-6 mt-1">
-                  R,G,B,Y,C,M,W,K すべての点を使った立体
-                </p>
-              </div>
+
+                <div className="mb-3">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-[10px] font-mono text-dim">opacity</span>
+                    <span className="text-[10px] font-mono text-label">{Math.round(solidOpacity * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1"
+                    step="0.05"
+                    value={solidOpacity}
+                    onChange={(e) => setSolidOpacity(parseFloat(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+              </>
             )}
 
-            {/* 透明度スライダー */}
-            {gradientMode && (
-              <div>
-                <label className="text-sm text-gray-700 dark:text-gray-300 flex items-center justify-between">
-                  <span>💎 透明度</span>
-                  <span className="text-xs">{Math.round(solidOpacity * 100)}%</span>
-                </label>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="1"
-                  step="0.05"
-                  value={solidOpacity}
-                  onChange={(e) => setSolidOpacity(parseFloat(e.target.value))}
-                  className="w-full mt-1"
-                />
-              </div>
-            )}
-
-            {/* 2D表示トグル */}
-            <div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={show2D}
-                  onChange={(e) => setShow2D(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">📊 2D色空間表示</span>
-              </label>
-            </div>
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input
+                type="checkbox"
+                checked={show2D}
+                onChange={(e) => setShow2D(e.target.checked)}
+              />
+              <span className="text-xs font-mono text-label group-hover:text-foreground transition-colors">
+                2D projections
+              </span>
+            </label>
           </div>
 
-          {selectedFile && (
-            <div className="w-full p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm">
-                    <span className="font-semibold">プロファイル 1:</span> {selectedFile.name}
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    サイズ: {(selectedFile.size / 1024).toFixed(2)} KB
-                  </p>
+          {/* Divider */}
+          <div className="border-t border-[#1e1e1e] mx-3 mt-4" />
 
-                  {profile && (
-                    <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="font-semibold">色空間:</span> {profile.header.colorSpace}
-                        </div>
-                        <div>
-                          <span className="font-semibold">バージョン:</span>{' '}
-                          {profile.header.version}
-                        </div>
-                        <div>
-                          <span className="font-semibold">デバイス:</span>{' '}
-                          {profile.header.deviceClass}
-                        </div>
-                        <div>
-                          <span className="font-semibold">PCS:</span> {profile.header.pcs}
-                        </div>
-                        <div className="col-span-2">
-                          <span className="font-semibold">色域体積:</span>{' '}
-                          {profile.gamutVolume?.toFixed(6) ?? 'N/A'}
-                          {profile2 && profile.gamutVolume && profile2.gamutVolume && (
-                            <span className="ml-2 text-gray-500">
-                              (比率: {(profile.gamutVolume / profile2.gamutVolume).toFixed(2)}x)
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {profile.description && (
-                        <p className="text-xs mt-2">
-                          <span className="font-semibold">説明:</span> {profile.description}
-                        </p>
-                      )}
+          {/* Profile 1 info */}
+          {selectedFile && (
+            <div className="px-3 mt-4">
+              <p className="text-[10px] text-dim font-mono uppercase tracking-widest mb-2">Profile A</p>
+              <p className="text-xs font-mono text-foreground truncate">{selectedFile.name}</p>
+              <p className="text-[10px] font-mono text-dim mt-0.5">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+
+              {profile && (
+                <div className="mt-3 space-y-1">
+                  {[
+                    ['color space', profile.header.colorSpace],
+                    ['version', profile.header.version],
+                    ['device', profile.header.deviceClass],
+                    ['PCS', profile.header.pcs],
+                    ['gamut vol', profile.gamutVolume?.toFixed(4) ?? 'N/A'],
+                  ].map(([k, v]) => (
+                    <div key={k} className="flex justify-between gap-2">
+                      <span className="text-[10px] font-mono text-dim">{k}</span>
+                      <span className="text-[10px] font-mono text-label truncate max-w-[100px] text-right">{v}</span>
                     </div>
+                  ))}
+                  {profile.description && (
+                    <p className="text-[10px] font-mono text-dim mt-1 truncate" title={profile.description}>
+                      {profile.description}
+                    </p>
                   )}
                 </div>
+              )}
 
-                {!compareMode && profile && (
-                  <div className="ml-4 flex gap-2">
-                    <ShareButton
-                      file={selectedFile}
-                      profileName={profile.description || selectedFile.name}
-                    />
-                    <ExportButton
-                      profile={profile}
-                      profileName={profile.description || selectedFile.name}
-                    />
-                    <label
-                      htmlFor="file-input-2"
-                      className="cursor-pointer px-3 py-1.5 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded transition-colors"
-                    >
-                      + 比較
-                    </label>
-                    <input
-                      type="file"
-                      accept=".icc,.icm"
-                      onChange={handleFileChange2}
-                      className="hidden"
-                      id="file-input-2"
-                    />
-                  </div>
-                )}
-              </div>
+              {!compareMode && profile && (
+                <div className="mt-3 flex flex-col gap-1.5">
+                  <ShareButton file={selectedFile} profileName={profile.description || selectedFile.name} />
+                  <ExportButton profile={profile} profileName={profile.description || selectedFile.name} />
+                  <label
+                    htmlFor="file-input-2"
+                    className="cursor-pointer px-2 py-1.5 text-xs font-mono text-label border border-[#2e2e2e] hover:border-[#444] hover:text-foreground transition-colors text-center"
+                  >
+                    + compare
+                  </label>
+                  <input
+                    type="file"
+                    accept=".icc,.icm"
+                    onChange={handleFileChange2}
+                    className="hidden"
+                    id="file-input-2"
+                  />
+                </div>
+              )}
             </div>
           )}
 
+          {/* Profile 2 info */}
           {selectedFile2 && (
-            <div className="w-full p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <p className="text-sm">
-                    <span className="font-semibold">プロファイル 2:</span> {selectedFile2.name}
-                  </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                    サイズ: {(selectedFile2.size / 1024).toFixed(2)} KB
-                  </p>
+            <>
+              <div className="border-t border-[#1e1e1e] mx-3 mt-4" />
+              <div className="px-3 mt-4">
+                <p className="text-[10px] text-dim font-mono uppercase tracking-widest mb-2">Profile B</p>
+                <p className="text-xs font-mono text-foreground truncate">{selectedFile2.name}</p>
+                <p className="text-[10px] font-mono text-dim mt-0.5">{(selectedFile2.size / 1024).toFixed(1)} KB</p>
 
-                  {profile2 && (
-                    <div className="mt-3 pt-3 border-t border-gray-300 dark:border-gray-700">
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="font-semibold">色空間:</span>{' '}
-                          {profile2.header.colorSpace}
-                        </div>
-                        <div>
-                          <span className="font-semibold">バージョン:</span>{' '}
-                          {profile2.header.version}
-                        </div>
-                        <div>
-                          <span className="font-semibold">デバイス:</span>{' '}
-                          {profile2.header.deviceClass}
-                        </div>
-                        <div>
-                          <span className="font-semibold">PCS:</span> {profile2.header.pcs}
-                        </div>
-                        <div className="col-span-2">
-                          <span className="font-semibold">色域体積:</span>{' '}
-                          {profile2.gamutVolume?.toFixed(6) ?? 'N/A'}
-                          {profile && profile.gamutVolume && profile2.gamutVolume && (
-                            <span className="ml-2 text-gray-500">
-                              (比率: {(profile2.gamutVolume / profile.gamutVolume).toFixed(2)}x)
-                            </span>
-                          )}
-                        </div>
+                {profile2 && (
+                  <div className="mt-3 space-y-1">
+                    {[
+                      ['color space', profile2.header.colorSpace],
+                      ['version', profile2.header.version],
+                      ['device', profile2.header.deviceClass],
+                      ['PCS', profile2.header.pcs],
+                      ['gamut vol', profile2.gamutVolume?.toFixed(4) ?? 'N/A'],
+                    ].map(([k, v]) => (
+                      <div key={k} className="flex justify-between gap-2">
+                        <span className="text-[10px] font-mono text-dim">{k}</span>
+                        <span className="text-[10px] font-mono text-label truncate max-w-[100px] text-right">{v}</span>
                       </div>
-                      {profile2.description && (
-                        <p className="text-xs mt-2">
-                          <span className="font-semibold">説明:</span> {profile2.description}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
 
-                <div className="ml-4 flex gap-2">
+                <div className="mt-3 flex flex-col gap-1.5">
                   {profile2 && (
                     <>
-                      <ShareButton
-                        file={selectedFile2}
-                        profileName={profile2.description || selectedFile2.name}
-                      />
-                      <ExportButton
-                        profile={profile2}
-                        profileName={profile2.description || selectedFile2.name}
-                      />
+                      <ShareButton file={selectedFile2} profileName={profile2.description || selectedFile2.name} />
+                      <ExportButton profile={profile2} profileName={profile2.description || selectedFile2.name} />
                     </>
                   )}
                   <button
                     onClick={clearComparison}
-                    className="px-3 py-1.5 text-xs bg-red-500 hover:bg-red-600 text-white rounded transition-colors"
+                    className="px-2 py-1.5 text-xs font-mono text-dim border border-[#2e2e2e] hover:border-[#555] hover:text-foreground transition-colors"
                   >
-                    削除
+                    remove B
                   </button>
                 </div>
               </div>
-            </div>
+            </>
           )}
 
+          {/* Error */}
           {error && (
-            <div className="w-full p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg">
-              <p className="text-sm">⚠️ {error}</p>
+            <div className="mx-3 mt-4 p-3 border border-[#3a1a1a] bg-[#1a0a0a]">
+              <p className="text-xs font-mono text-[#cc4444]">{error}</p>
             </div>
           )}
 
-          <div className="w-full h-[600px] bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
+          {/* Spacer */}
+          <div className="flex-1" />
+        </aside>
+
+        {/* MAIN — 3D canvas fills everything */}
+        <main className="flex-1 flex flex-col overflow-hidden">
+
+          {/* 3D viewer — dominates the screen */}
+          <div className="flex-1 bg-[#050505] relative min-h-[500px]">
             {isLoading || isLoading2 ? (
               <div className="w-full h-full flex items-center justify-center">
-                <p className="text-gray-600 dark:text-gray-400">解析中...</p>
+                <p className="text-xs font-mono text-label tracking-widest uppercase">parsing...</p>
               </div>
             ) : profile ? (
               <ColorSpaceViewer
@@ -450,95 +415,58 @@ export default function Home() {
                 solidOpacity={solidOpacity}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <p className="text-gray-600 dark:text-gray-400">
-                  プロファイルを選択すると3D表示されます
-                </p>
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3">
+                <p className="text-xs font-mono text-dim tracking-widest uppercase">no profile loaded</p>
+                <p className="text-[10px] font-mono text-[#333]">drop an .icc file or select a preset</p>
               </div>
             )}
           </div>
 
-          {/* 色域カバレッジダッシュボード */}
+          {/* Analysis panels — below the 3D view, only when loaded */}
           {profile && (
-            <div className="w-full mt-8">
-              <GamutCoverageDashboard
-                colorPoints={profile.colorPoints}
-                profileName={profile.description || selectedFile?.name}
-              />
-            </div>
-          )}
+            <div className="bg-[#0a0a0a] border-t border-[#1e1e1e] overflow-y-auto max-h-[50vh]">
+              <div className="p-5 space-y-8">
 
-          {/* 色域カバレッジ比較 */}
-          {profile2 && (
-            <div className="w-full mt-8">
-              <GamutCoverageDashboard
-                colorPoints={profile2.colorPoints}
-                profileName={profile2.description || selectedFile2?.name}
-              />
-            </div>
-          )}
+                {/* Gamut coverage */}
+                <GamutCoverageDashboard
+                  colorPoints={profile.colorPoints}
+                  profileName={profile.description || selectedFile?.name}
+                />
 
-          {/* 色覚シミュレーション */}
-          {profile && (
-            <div className="w-full mt-8">
-              <ColorVisionSimulator
-                colorPoints={profile.colorPoints}
-                profileName={profile.description || selectedFile?.name}
-              />
-            </div>
-          )}
+                {profile2 && (
+                  <GamutCoverageDashboard
+                    colorPoints={profile2.colorPoints}
+                    profileName={profile2.description || selectedFile2?.name}
+                  />
+                )}
 
-          {/* 2D色空間表示 */}
-          {show2D && profile && (
-            <div className="w-full mt-8">
-              <h2 className="text-2xl font-bold mb-4 text-center">2D色空間表示</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <ColorSpace2D
+                {/* Color vision simulation */}
+                <ColorVisionSimulator
                   colorPoints={profile.colorPoints}
                   profileName={profile.description || selectedFile?.name}
-                  type="xy"
                 />
-                <ColorSpace2D
-                  colorPoints={profile.colorPoints}
-                  profileName={profile.description || selectedFile?.name}
-                  type="lab"
-                />
-                <ColorSpace2D
-                  colorPoints={profile.colorPoints}
-                  profileName={profile.description || selectedFile?.name}
-                  type="lch"
-                />
-                <ColorSpace2D
-                  colorPoints={profile.colorPoints}
-                  profileName={profile.description || selectedFile?.name}
-                  type="rgb-xy"
-                />
-                <ColorSpace2D
-                  colorPoints={profile.colorPoints}
-                  profileName={profile.description || selectedFile?.name}
-                  type="rgb-xz"
-                />
-                <ColorSpace2D
-                  colorPoints={profile.colorPoints}
-                  profileName={profile.description || selectedFile?.name}
-                  type="rgb-yz"
-                />
+
+                {/* 2D projections */}
+                {show2D && (
+                  <div>
+                    <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-4">2D Projections</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {(['xy', 'lab', 'lch', 'rgb-xy', 'rgb-xz', 'rgb-yz'] as const).map((t) => (
+                        <ColorSpace2D
+                          key={t}
+                          colorPoints={profile.colorPoints}
+                          profileName={profile.description || selectedFile?.name}
+                          type={t}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
-        </div>
-
-        <div className="flex gap-4 mt-8">
-          <a
-            href="https://github.com/kako-jun/cprof"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-800 rounded-lg hover:opacity-80 transition-opacity"
-          >
-            GitHub
-          </a>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   )
 }

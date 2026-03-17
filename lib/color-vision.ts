@@ -163,7 +163,7 @@ export function simulateColorVision(rgb: RGB, visionType: ColorVisionType): RGB 
       break
 
     case 'achromatopsia': // 全色盲（モノクロ）
-      const luminance = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b
+      const luminance = Math.round(0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b)
       return { r: luminance, g: luminance, b: luminance }
 
     case 'achromatomaly': // 1色弱（ほぼモノクロ）
