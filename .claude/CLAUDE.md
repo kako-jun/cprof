@@ -61,19 +61,23 @@
 
 ```
 cprof/
-├── .claude/                  # Claude用ドキュメント
-│   ├── CLAUDE.md            # このファイル
-│   ├── FEATURES.md          # 機能仕様
-│   ├── DESIGN.md            # 設計ドキュメント
-│   ├── TODO.md              # タスク管理
-│   └── ARCHITECTURE.md      # アーキテクチャ
+├── .claude/
+│   └── CLAUDE.md            # このファイル
 ├── app/
 │   └── page.tsx             # メインページ
 ├── components/              # UIコンポーネント
 ├── lib/                     # ビジネスロジック
 ├── public/
 │   └── profiles/            # サンプルプロファイル
-└── docs/                    # ユーザー向けドキュメント
+└── docs/                    # ドキュメント
+    ├── architecture.md      # アーキテクチャ
+    ├── design.md            # 設計ドキュメント
+    ├── features.md          # 機能仕様
+    ├── implementation-features.md
+    ├── overview.md
+    ├── platforms.md
+    ├── roadmap.md
+    └── user-guide.md
 ```
 
 ## 競合優位性
