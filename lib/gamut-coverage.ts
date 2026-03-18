@@ -63,41 +63,142 @@ export function calculateGamutArea(colorPoints: ColorPoint[]): number {
 }
 
 /**
- * 2つの色域の重なり面積を計算（簡易版）
+ * Sutherland-Hodgman アルゴリズムによるポリゴンクリッピング
  *
- * 注: 正確な交差計算は複雑なので、簡易的にJaccard係数を使用
+ * subjectPolygon を clipPolygon で切り取った交差領域を返す
+ */
+function sutherlandHodgmanClip(
+  subjectPolygon: { x: number; y: number }[],
+  clipPolygon: { x: number; y: number }[]
+): { x: number; y: number }[] {
+  if (subjectPolygon.length < 3 || clipPolygon.length < 3) return []
+
+  let output = [...subjectPolygon]
+
+  for (let i = 0; i < clipPolygon.length; i++) {
+    if (output.length === 0) return []
+
+    const input = [...output]
+    output = []
+
+    const edgeStart = clipPolygon[i]
+    const edgeEnd = clipPolygon[(i + 1) % clipPolygon.length]
+
+    for (let j = 0; j < input.length; j++) {
+      const current = input[j]
+      const previous = input[(j + input.length - 1) % input.length]
+
+      const currInside = isInsideEdge(current, edgeStart, edgeEnd)
+      const prevInside = isInsideEdge(previous, edgeStart, edgeEnd)
+
+      if (currInside) {
+        if (!prevInside) {
+          const intersection = lineIntersection(previous, current, edgeStart, edgeEnd)
+          if (intersection) output.push(intersection)
+        }
+        output.push(current)
+      } else if (prevInside) {
+        const intersection = lineIntersection(previous, current, edgeStart, edgeEnd)
+        if (intersection) output.push(intersection)
+      }
+    }
+  }
+
+  return output
+}
+
+/**
+ * 点がエッジの内側（左側）にあるかを判定
+ */
+function isInsideEdge(
+  point: { x: number; y: number },
+  edgeStart: { x: number; y: number },
+  edgeEnd: { x: number; y: number }
+): boolean {
+  return (
+    (edgeEnd.x - edgeStart.x) * (point.y - edgeStart.y) -
+    (edgeEnd.y - edgeStart.y) * (point.x - edgeStart.x) >= 0
+  )
+}
+
+/**
+ * 2つの線分の交点を計算
+ */
+function lineIntersection(
+  p1: { x: number; y: number },
+  p2: { x: number; y: number },
+  p3: { x: number; y: number },
+  p4: { x: number; y: number }
+): { x: number; y: number } | null {
+  const denom =
+    (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x)
+
+  if (Math.abs(denom) < 1e-12) return null
+
+  const t =
+    ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) / denom
+
+  return {
+    x: p1.x + t * (p2.x - p1.x),
+    y: p1.y + t * (p2.y - p1.y),
+  }
+}
+
+/**
+ * 2つの色域の重なり面積を計算（Sutherland-Hodgman アルゴリズム）
  */
 export function calculateGamutOverlap(
   colorPoints1: ColorPoint[],
   colorPoints2: ColorPoint[]
 ): number {
-  const area1 = calculateGamutArea(colorPoints1)
-  const area2 = calculateGamutArea(colorPoints2)
+  const poly1 = getGamutTriangle(colorPoints1)
+  const poly2 = getGamutTriangle(colorPoints2)
 
-  // 簡易的に小さい方の面積を重なりと仮定
-  // より正確な計算には Sutherland-Hodgman アルゴリズムなどが必要
-  const minArea = Math.min(area1, area2)
-  const maxArea = Math.max(area1, area2)
+  const intersection = sutherlandHodgmanClip(poly1, poly2)
+  const intersectionArea = calculatePolygonArea(intersection)
 
-  return minArea / maxArea
+  const area1 = calculatePolygonArea(poly1)
+  const area2 = calculatePolygonArea(poly2)
+  const unionArea = area1 + area2 - intersectionArea
+
+  if (unionArea === 0) return 0
+  return intersectionArea / unionArea
+}
+
+/**
+ * ColorPoint配列からxy色度図上の三角形（RGB三原色）を取得
+ */
+function getGamutTriangle(colorPoints: ColorPoint[]): { x: number; y: number }[] {
+  const primaries = colorPoints.slice(0, 3)
+  const xyPoints = primaries.map(toXYChromaticity)
+  return sortPointsByAngle(xyPoints)
 }
 
 /**
  * 色域カバレッジを計算（パーセンテージ）
  *
+ * ターゲット色域がリファレンス色域をどの程度カバーしているかを、
+ * xy色度図上のポリゴン交差面積で正確に計算する。
+ *
  * @param target カバレッジを計算したい色域
  * @param reference 基準となる色域
- * @returns カバレッジのパーセンテージ (0-100)
+ * @returns カバレッジのパーセンテージ (0-100+)
  */
 export function calculateCoverage(target: ColorPoint[], reference: ColorPoint[]): number {
-  const targetArea = calculateGamutArea(target)
-  const referenceArea = calculateGamutArea(reference)
+  const targetPoly = getGamutTriangle(target)
+  const refPoly = getGamutTriangle(reference)
 
+  const referenceArea = calculatePolygonArea(refPoly)
   if (referenceArea === 0) return 0
 
-  // カバレッジ = (ターゲット面積 / リファレンス面積) * 100
-  // 100%を超える場合は、ターゲットがリファレンスより広い
-  return (targetArea / referenceArea) * 100
+  // ターゲットとリファレンスの交差領域を計算
+  const intersection = sutherlandHodgmanClip(targetPoly, refPoly)
+  const intersectionArea = calculatePolygonArea(intersection)
+
+  // カバレッジ = 交差面積 / リファレンス面積 * 100
+  // 100%以下: ターゲットがリファレンスを完全にはカバーしていない
+  // 100%: ターゲットがリファレンスを完全にカバー
+  return (intersectionArea / referenceArea) * 100
 }
 
 /**

@@ -11,11 +11,13 @@ import {
 interface GamutCoverageDashboardProps {
   colorPoints: ColorPoint[]
   profileName?: string
+  usingSRGBDefaults?: boolean
 }
 
 export default function GamutCoverageDashboard({
   colorPoints,
   profileName,
+  usingSRGBDefaults,
 }: GamutCoverageDashboardProps) {
   const coverages = useMemo(() => calculateStandardCoverages(colorPoints), [colorPoints])
   const gamutArea = useMemo(() => calculateGamutArea(colorPoints), [colorPoints])
@@ -26,6 +28,14 @@ export default function GamutCoverageDashboard({
         Gamut Coverage
         {profileName && <span className="ml-3 text-label normal-case tracking-normal">{profileName}</span>}
       </p>
+
+      {usingSRGBDefaults && (
+        <div className="mb-4 p-3 bg-[#1a1500] border border-[#332a00]">
+          <p className="text-[10px] font-mono text-[#aa8800] leading-relaxed">
+            This profile uses a non-RGB color space. Coverage values below reflect sRGB defaults, not the actual profile gamut.
+          </p>
+        </div>
+      )}
 
       <div className="mb-4 flex gap-6">
         <div>

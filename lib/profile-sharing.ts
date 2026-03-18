@@ -61,7 +61,40 @@ export function createProfileURL(
 }
 
 /**
- * URLからプロファイル情報を抽出
+ * HTMLエンティティをエスケープしてXSSを防止
+ */
+function escapeHTML(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+/**
+ * ファイル名をサニタイズ（安全な文字のみ許可）
+ */
+function sanitizeFileName(name: string): string {
+  // HTMLエスケープ
+  const escaped = escapeHTML(name)
+  // ファイル名として安全な文字のみ許可（英数字、ハイフン、アンダースコア、ドット、スペース）
+  const sanitized = escaped.replace(/[^\w\s.\-()]/g, '_')
+  // 長さ制限
+  return sanitized.slice(0, 255)
+}
+
+/**
+ * Base64文字列を検証（有効なBase64文字のみ許可）
+ */
+function isValidBase64(str: string): boolean {
+  if (str.length === 0) return false
+  // URL-safe base64も許可（+/= に加えて -_ も可）
+  return /^[A-Za-z0-9+/\-_=]+$/.test(str)
+}
+
+/**
+ * URLからプロファイル情報を抽出（サニタイズ済み）
  */
 export function extractProfileFromURL(): {
   profile: string | null
@@ -72,10 +105,16 @@ export function extractProfileFromURL(): {
   }
 
   const params = new URLSearchParams(window.location.search)
-  return {
-    profile: params.get('profile'),
-    name: params.get('name'),
-  }
+  const rawProfile = params.get('profile')
+  const rawName = params.get('name')
+
+  // プロファイルデータのバリデーション（Base64形式のみ許可）
+  const profile = rawProfile && isValidBase64(rawProfile) ? rawProfile : null
+
+  // ファイル名のサニタイズ
+  const name = rawName ? sanitizeFileName(rawName) : null
+
+  return { profile, name }
 }
 
 /**

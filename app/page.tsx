@@ -315,6 +315,13 @@ export default function Home() {
                       {profile.description}
                     </p>
                   )}
+                  {profile.usingSRGBDefaults && (
+                    <div className="mt-2 p-2 bg-[#1a1500] border border-[#332a00]">
+                      <p className="text-[10px] font-mono text-[#aa8800] leading-relaxed">
+                        Non-RGB profile ({profile.header.colorSpace}). Gamut data shown as sRGB defaults — values are not from the actual profile.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -363,6 +370,13 @@ export default function Home() {
                         <span className="text-[10px] font-mono text-label truncate max-w-[100px] text-right">{v}</span>
                       </div>
                     ))}
+                    {profile2.usingSRGBDefaults && (
+                      <div className="mt-2 p-2 bg-[#1a1500] border border-[#332a00]">
+                        <p className="text-[10px] font-mono text-[#aa8800] leading-relaxed">
+                          Non-RGB profile ({profile2.header.colorSpace}). Gamut data shown as sRGB defaults — values are not from the actual profile.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -431,12 +445,14 @@ export default function Home() {
                 <GamutCoverageDashboard
                   colorPoints={profile.colorPoints}
                   profileName={profile.description || selectedFile?.name}
+                  usingSRGBDefaults={profile.usingSRGBDefaults}
                 />
 
                 {profile2 && (
                   <GamutCoverageDashboard
                     colorPoints={profile2.colorPoints}
                     profileName={profile2.description || selectedFile2?.name}
+                    usingSRGBDefaults={profile2.usingSRGBDefaults}
                   />
                 )}
 

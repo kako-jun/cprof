@@ -32,6 +32,8 @@ export interface ICCProfile {
   colorPoints: ColorPoint[];
   gamutVolume?: number;
   description?: string;
+  /** true when the profile is non-RGB and sRGB default values are shown instead of actual gamut data */
+  usingSRGBDefaults?: boolean;
 }
 
 /**
@@ -269,6 +271,7 @@ export async function parseICCProfile(file: File): Promise<ICCProfile> {
   }
 
   let colorPoints: ColorPoint[] = [];
+  let usingSRGBDefaults = false;
 
   // RGB色空間の場合、rXYZ, gXYZ, bXYZ, wtptタグから色域を抽出
   if (header.colorSpace === 'RGB') {
@@ -288,11 +291,13 @@ export async function parseICCProfile(file: File): Promise<ICCProfile> {
       // タグが見つからない場合はsRGBのデフォルト値を使用
       console.warn('RGB primaries not found, using sRGB defaults');
       colorPoints = generateDefaultSRGBGamut();
+      usingSRGBDefaults = true;
     }
   } else {
     // RGB以外の色空間の場合はデフォルト
     console.warn(`Color space ${header.colorSpace} not fully supported yet`);
     colorPoints = generateDefaultSRGBGamut();
+    usingSRGBDefaults = true;
   }
 
   // 色域体積を計算
@@ -303,6 +308,7 @@ export async function parseICCProfile(file: File): Promise<ICCProfile> {
     colorPoints,
     gamutVolume,
     description,
+    usingSRGBDefaults,
   };
 }
 
