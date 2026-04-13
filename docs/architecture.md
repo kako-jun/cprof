@@ -1,412 +1,506 @@
-# cprof - アーキテクチャ設計
+# cprof - 設計ドキュメント
 
-## 概要
+## 設計哲学
 
-cprofは、クライアントサイドで完結するSPA（Single Page Application）として設計されています。サーバーサイド処理は一切不要で、すべての処理がブラウザ内で完結します。
+### コア原則
 
-## システムアーキテクチャ
+1. **シンプルさ優先**
+   - 依存パッケージを最小限に
+   - 過度な抽象化を避ける
+   - コードは読みやすさ重視
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Browser                            │
-│                                                       │
-│  ┌────────────────────────────────────────────┐    │
-│  │           Next.js App (SSG)                 │    │
-│  │                                              │    │
-│  │  ┌──────────────┐  ┌──────────────┐       │    │
-│  │  │ UI Components │  │ 3D Viewer    │       │    │
-│  │  │              │  │ (Three.js)   │       │    │
-│  │  └──────┬───────┘  └──────┬───────┘       │    │
-│  │         │                  │                │    │
-│  │         └──────┬───────────┘                │    │
-│  │                │                             │    │
-│  │         ┌──────▼──────────┐                │    │
-│  │         │  Business Logic  │                │    │
-│  │         │  (lib/)          │                │    │
-│  │         └──────┬───────────┘                │    │
-│  │                │                             │    │
-│  │         ┌──────▼──────────┐                │    │
-│  │         │  Browser APIs    │                │    │
-│  │         │  File, Clipboard │                │    │
-│  │         └──────────────────┘                │    │
-│  └────────────────────────────────────────────┘    │
-│                                                       │
-└─────────────────────────────────────────────────────┘
-```
+2. **型安全性**
+   - TypeScriptを活用
+   - 実行時エラーを防ぐ
+   - IDEの補完を最大化
 
-## レイヤー構成
+3. **パフォーマンス**
+   - 不要な再計算を避ける
+   - メモ化を活用
+   - 遅延ロードを実装
 
-### 1. プレゼンテーション層（components/）
+4. **ユーザー第一**
+   - 直感的なUI/UX
+   - エラーメッセージは明確に
+   - プライバシーを保護
 
-**責務**: UIの描画とユーザーインタラクション
+## データモデル
 
-```
-components/
-├── ColorSpace2D.tsx              # 2D色度図
-├── ColorSpaceViewer.tsx          # 3D色空間（Three.js）
-├── GamutCoverageDashboard.tsx    # カバレッジダッシュボード
-├── ColorVisionSimulator.tsx      # 色覚シミュレーター
-├── ShareButton.tsx               # 共有ボタン
-└── ExportButton.tsx              # エクスポートボタン
-```
+### 型定義
 
-**設計原則**:
-
-- Presentational vs Container分離
-- 単一責任の原則
-- Propsによる疎結合
-
-### 2. ビジネスロジック層（lib/）
-
-**責務**: データ処理、計算、変換
-
-```
-lib/
-├── icc-parser.ts        # ICCプロファイル解析
-├── gamut-coverage.ts    # 色域カバレッジ計算
-├── color-vision.ts      # 色覚シミュレーション
-├── profile-sharing.ts   # URL共有
-└── data-export.ts       # データエクスポート
-```
-
-**設計原則**:
-
-- 純粋関数優先
-- 副作用の局所化
-- 型安全性の徹底
-
-### 3. アプリケーション層（app/）
-
-**責務**: ページ構成、ルーティング、状態管理
-
-```
-app/
-└── page.tsx             # メインページ（状態管理）
-```
-
-**設計原則**:
-
-- React Hooks活用
-- useState/useEffectによる状態管理
-- useMemoによるパフォーマンス最適化
-
-## データフロー
-
-### 1. プロファイル読み込みフロー
-
-```
-User Action
-    ↓
-File Input/Drag&Drop/URL
-    ↓
-parseICCProfile(file)
-    ↓
-ICCProfile Object
-    ↓
-├─→ 3D Viewer (colorPoints)
-├─→ 2D Diagrams (colorPoints)
-├─→ Coverage Dashboard (colorPoints)
-├─→ Vision Simulator (colorPoints)
-└─→ Export (entire profile)
-```
-
-### 2. カバレッジ計算フロー
-
-```
-ColorPoints
-    ↓
-calculateGamutArea()
-    ↓
-Polygon Area (Shoelace Formula)
-    ↓
-calculateCoverage(target, reference)
-    ↓
-Coverage Percentage
-    ↓
-GamutCoverageDashboard
-```
-
-### 3. 色覚シミュレーションフロー
-
-```
-RGB Color
-    ↓
-rgbToLms()
-    ↓
-LMS Color Space
-    ↓
-simulateColorVision(lms, visionType)
-    ↓
-Modified LMS
-    ↓
-lmsToRgb()
-    ↓
-Simulated RGB
-```
-
-## 状態管理戦略
-
-### ローカル状態（useState）
+#### ICCProfile
 
 ```typescript
-// ファイル管理
-const [selectedFile, setSelectedFile] = useState<File | null>(null)
-const [selectedFile2, setSelectedFile2] = useState<File | null>(null)
-
-// プロファイルデータ
-const [profile, setProfile] = useState<ICCProfile | null>(null)
-const [profile2, setProfile2] = useState<ICCProfile | null>(null)
-
-// UI状態
-const [isLoading, setIsLoading] = useState(false)
-const [error, setError] = useState<string | null>(null)
-const [compareMode, setCompareMode] = useState(false)
+interface ICCProfile {
+  header: ICCProfileHeader // プロファイルメタデータ
+  colorPoints: ColorPoint[] // 色空間の点
+  gamutVolume?: number // 3D色域体積
+  description?: string // プロファイル説明
+}
 ```
 
-**なぜグローバル状態管理ライブラリを使わないか:**
-
-- アプリケーションが単一ページ
-- 状態が比較的シンプル
-- 親→子へのProps渡しで十分
-- 依存を最小限に保ちたい
-
-### 派生状態（useMemo）
+#### ColorPoint
 
 ```typescript
-// 計算コストの高い処理をメモ化
-const coverages = useMemo(() => {
-  return calculateStandardCoverages(colorPoints)
-}, [colorPoints])
-
-const sortedData = useMemo(() => {
-  return sortPointsByAngle(data)
-}, [data])
+interface ColorPoint {
+  x: number // XYZ色空間のX座標
+  y: number // XYZ色空間のY座標
+  z: number // XYZ色空間のZ座標
+  label?: string // ラベル（"Red", "Green"など）
+  color?: string // 16進数カラーコード（"#ff0000"）
+}
 ```
 
-## パフォーマンス戦略
+### データ変換フロー
 
-### 1. コード分割
+```
+ICC Binary File
+    ↓ parseICCProfile()
+ICCProfile
+    ↓
+┌───┴───┐
+│       │
+▼       ▼
+XYZ → xy色度座標
+XYZ → RGB（3D表示用）
+```
+
+## コンポーネント設計
+
+### 設計パターン
+
+#### 1. Presentational Components
+
+**特徴**:
+
+- UIの描画のみ
+- ロジックを含まない
+- Propsでデータを受け取る
+
+**例**: ColorSpace2D.tsx
 
 ```typescript
-// Three.jsは大きいので遅延ロード
-const ColorSpaceViewer = dynamic(() => import('@/components/ColorSpaceViewer'), {
-  ssr: false,
-})
+interface ColorSpace2DProps {
+  colorPoints: ColorPoint[]
+  profileName?: string
+  type: 'xy' | 'lab' | 'lch' | 'rgb-xy' | 'rgb-xz' | 'rgb-yz'
+}
+
+export default function ColorSpace2D({ colorPoints, profileName, type }: ColorSpace2DProps) {
+  // 純粋な描画ロジック
+}
 ```
 
-### 2. メモ化
+#### 2. Container Components
 
-- **useMemo**: 重い計算のキャッシュ
-- **React.memo**: 不要な再レンダリング防止（将来実装）
+**特徴**:
 
-### 3. 最適化候補
+- 状態管理
+- データフェッチ
+- ロジック処理
+
+**例**: app/page.tsx
 
 ```typescript
-// TODO: 大量の点を扱う場合
-// - Web Workers for heavy calculations
-// - Virtual scrolling for long lists
-// - Canvas rendering for large datasets
+export default function Home() {
+  const [profile, setProfile] = useState<ICCProfile | null>(null)
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    // ファイル読み込みロジック
+  }
+
+  return (
+    // Presentationalコンポーネントへの委譲
+  )
+}
 ```
 
-## セキュリティ考慮事項
+### コンポーネント責務マトリクス
 
-### 1. クライアントサイド処理
+| コンポーネント         | 状態 | ロジック | 描画 | 再利用性 |
+| ---------------------- | ---- | -------- | ---- | -------- |
+| page.tsx               | ●    | ●        | ○    | ×        |
+| ColorSpace2D           | ×    | ○        | ●    | ●        |
+| ColorSpaceViewer       | ○    | ●        | ●    | ●        |
+| GamutCoverageDashboard | ×    | ○        | ●    | ●        |
+| ColorVisionSimulator   | ○    | ○        | ●    | ●        |
+| ShareButton            | ●    | ●        | ●    | ●        |
+| ExportButton           | ●    | ●        | ●    | ●        |
+
+● = 主要責務 / ○ = 部分的責務 / × = なし
+
+## アルゴリズム設計
+
+### 1. 色域面積計算（Shoelace Formula）
+
+**目的**: xy色度図上のポリゴン面積を計算
+
+**アルゴリズム**:
+
+```typescript
+function calculatePolygonArea(points: { x: number; y: number }[]): number {
+  let area = 0
+  for (let i = 0; i < points.length; i++) {
+    const j = (i + 1) % points.length
+    area += points[i].x * points[j].y
+    area -= points[j].x * points[i].y
+  }
+  return Math.abs(area) / 2
+}
+```
+
+**計算量**: O(n) - n: 点の数
+
+**精度**:
+
+- プライマリカラー（3点）のみ使用
+- 簡易的な三角形近似
+- 実用上十分な精度
+
+### 2. 点のソート（角度順）
+
+**目的**: ポリゴンを正しく閉じるため
+
+**アルゴリズム**:
+
+```typescript
+function sortPointsByAngle(points: { x: number; y: number }[]): { x: number; y: number }[] {
+  // 1. 中心点を計算
+  const centerX = points.reduce((sum, p) => sum + p.x, 0) / points.length
+  const centerY = points.reduce((sum, p) => sum + p.y, 0) / points.length
+
+  // 2. 各点の角度を計算してソート
+  return [...points].sort((a, b) => {
+    const angleA = Math.atan2(a.y - centerY, a.x - centerX)
+    const angleB = Math.atan2(b.y - centerY, b.x - centerX)
+    return angleA - angleB
+  })
+}
+```
+
+**計算量**: O(n log n)
 
 **利点**:
 
-- ユーザーデータがサーバーに送信されない
-- プライバシー保護
+- 凸包アルゴリズムより単純
+- 小規模データセット（8点以下）に最適
 
-**注意点**:
+### 3. 色覚シミュレーション（LMS変換）
 
-- ファイルサイズの制限なし（メモリに注意）
-- 悪意あるプロファイルの処理
+**目的**: 異なる色覚タイプでの見え方をシミュレート
 
-### 2. URL共有
+**アルゴリズム**:
 
-**脅威**:
+```
+RGB → Linear RGB → LMS → Modified LMS → Linear RGB → RGB
+  ↑     (sRGB逆変換)  ↑    (色覚変換)      ↑    (sRGB変換)  ↑
+```
 
-- URLが長すぎてブラウザの制限
-- Base64デコード時のエラー
+**変換行列（Hunt-Pointer-Estevez）**:
 
-**対策**:
+```
+L   0.31399  0.63951  0.04650   R_linear
+M = 0.15537  0.75789  0.08670 × G_linear
+S   0.01775  0.10944  0.87257   B_linear
+```
 
-- URLサイズの警告表示
-- try-catchによるエラーハンドリング
+**色覚変換例（1型色覚）**:
 
-### 3. XSS対策
+```
+L_simulated = 2.02344 × M - 2.52581 × S
+M_simulated = M
+S_simulated = S
+```
 
-**対策**:
+## UI/UX設計
 
-- Reactのデフォルトエスケープに依存
-- dangerouslySetInnerHTMLは使用しない
-- ユーザー入力は最小限
+### デザイン原則
 
-## スケーラビリティ
+1. **Progressive Disclosure**
+   - 基本機能は常に見える
+   - 詳細機能は展開可能
 
-### 現在の制限
+2. **Feedback Loop**
+   - 操作結果を即座に表示
+   - ローディング状態を明示
 
-1. **プロファイル数**: 2つまで同時比較
-2. **ファイルサイズ**: ブラウザのメモリ次第
-3. **色点数**: 8点（RGB立方体の頂点）
+3. **Error Recovery**
+   - エラーメッセージは具体的に
+   - リカバリー方法を提示
 
-### 拡張可能性
+### カラースキーム
 
 ```typescript
-// 将来の拡張ポイント
+// Tailwind CSS classes
+const colorScheme = {
+  primary: 'blue-500', // アクション
+  secondary: 'purple-500', // 共有
+  success: 'green-500', // エクスポート
+  warning: 'yellow-500', // 警告
+  danger: 'red-500', // 削除
+  neutral: 'gray-500', // 背景
+}
+```
 
-// 1. 複数プロファイル対応
-interface ProfileState {
-  profiles: ICCProfile[] // 配列化
-  activeIndex: number
+### レスポンシブデザイン
+
+```typescript
+// ブレークポイント
+const breakpoints = {
+  sm: '640px', // モバイル
+  md: '768px', // タブレット
+  lg: '1024px', // デスクトップ
+  xl: '1280px', // 大画面
+}
+```
+
+**レイアウト戦略**:
+
+- モバイル: 縦並び（stack）
+- タブレット: 2カラムグリッド
+- デスクトップ: 3カラムグリッド
+
+## エラーハンドリング戦略
+
+### エラー分類
+
+1. **ユーザーエラー**
+   - 無効なファイル形式
+   - ファイルサイズ超過
+   - 破損したプロファイル
+
+2. **システムエラー**
+   - メモリ不足
+   - ブラウザ非対応
+   - ネットワークエラー（URL読み込み）
+
+3. **プログラミングエラー**
+   - 型エラー
+   - null/undefined参照
+   - 計算エラー
+
+### エラーハンドリングパターン
+
+```typescript
+// パターン1: try-catch
+try {
+  const profile = await parseICCProfile(file)
+  setProfile(profile)
+} catch (err) {
+  console.error('ICC parsing error:', err)
+  setError(err instanceof Error ? err.message : 'プロファイルの解析に失敗しました')
+  setProfile(null)
 }
 
-// 2. プラグインシステム
-interface Plugin {
-  name: string
-  version: string
-  load: (profile: ICCProfile) => void
-  render: () => JSX.Element
+// パターン2: Optional chaining
+const area = profile?.gamutVolume?.toFixed(6) ?? 'N/A'
+
+// パターン3: Nullish coalescing
+const name = profile.description || selectedFile?.name || 'Unknown'
+```
+
+## パフォーマンス設計
+
+### メモ化戦略
+
+```typescript
+// 重い計算をメモ化
+const coverages = useMemo(() => {
+  return calculateStandardCoverages(colorPoints)
+}, [colorPoints]) // colorPointsが変わった時のみ再計算
+
+// SVG要素の生成をメモ化
+const colorGrid = useMemo(() => {
+  // 20×20 = 400個の要素生成
+  return generateColorGrid()
+}, [type, xRange, yRange])
+```
+
+### レンダリング最適化
+
+```typescript
+// 条件付きレンダリング
+{profile && (
+  <GamutCoverageDashboard colorPoints={profile.colorPoints} />
+)}
+
+// 遅延ロード
+const ColorSpaceViewer = dynamic(() => import('@/components/ColorSpaceViewer'), {
+  ssr: false
+})
+```
+
+### パフォーマンス目標
+
+| メトリクス       | 目標    | 現状 | 備考     |
+| ---------------- | ------- | ---- | -------- |
+| 初回ロード       | < 3秒   | ?    | 測定必要 |
+| プロファイル解析 | < 500ms | ?    | 測定必要 |
+| 3D描画FPS        | > 30fps | ?    | 測定必要 |
+| カバレッジ計算   | < 100ms | ?    | 測定必要 |
+
+## アクセシビリティ設計
+
+### WCAG 2.1 AA準拠目標
+
+**現状**: 未対応
+
+**実装予定**:
+
+1. **キーボードナビゲーション**
+
+   ```typescript
+   // Tab順序の最適化
+   <button tabIndex={0}>...</button>
+
+   // ショートカットキー
+   useEffect(() => {
+     const handleKeyPress = (e: KeyboardEvent) => {
+       if (e.ctrlKey && e.key === 'o') {
+         // Open file
+       }
+     }
+   }, [])
+   ```
+
+2. **スクリーンリーダー対応**
+
+   ```typescript
+   <button aria-label="プロファイルをエクスポート">
+     エクスポート
+   </button>
+
+   <div role="status" aria-live="polite">
+     {isLoading && 'プロファイルを読み込んでいます...'}
+   </div>
+   ```
+
+3. **コントラスト比**
+   - テキスト: 4.5:1以上
+   - UI要素: 3:1以上
+
+## 国際化設計
+
+### 多言語対応計画
+
+**Phase 1: 構造準備**
+
+```typescript
+// lib/i18n.ts
+export const translations = {
+  en: {
+    'profile.load': 'Load Profile',
+    'profile.share': 'Share',
+    'profile.export': 'Export',
+  },
+  ja: {
+    'profile.load': 'プロファイルを読み込む',
+    'profile.share': '共有',
+    'profile.export': 'エクスポート',
+  },
 }
-
-// 3. ワーカー対応
-// lib/workers/
-//   ├── icc-parser.worker.ts
-//   ├── coverage-calculator.worker.ts
-//   └── vision-simulator.worker.ts
 ```
 
-## テスタビリティ
+**Phase 2: 実装**
 
-### 現状
+- next-i18next導入
+- 動的言語切り替え
+- URLベース言語検出
 
-- ユニットテストなし
-- E2Eテストなし
+**対応予定言語**:
 
-### 推奨テスト戦略
+1. 日本語（現在）
+2. 英語
+3. 中国語（簡体字）
+4. 韓国語
 
-```
-tests/
-├── unit/
-│   ├── icc-parser.test.ts
-│   ├── gamut-coverage.test.ts
-│   ├── color-vision.test.ts
-│   └── profile-sharing.test.ts
-├── integration/
-│   ├── profile-loading.test.tsx
-│   └── coverage-calculation.test.tsx
-└── e2e/
-    ├── basic-workflow.spec.ts
-    └── sharing-workflow.spec.ts
-```
+## セキュリティ設計
 
-**ツール候補**:
+### 脅威モデル
 
-- **Vitest**: ユニット/統合テスト
-- **Playwright**: E2Eテスト
-- **Testing Library**: Reactコンポーネントテスト
+1. **XSS攻撃**
+   - **対策**: Reactのデフォルトエスケープ
+   - **検証**: dangerouslySetInnerHTML不使用
 
-## デプロイメント
+2. **メモリ枯渇**
+   - **対策**: ファイルサイズ警告
+   - **検証**: 大きなファイルでのテスト
 
-### 静的サイト生成（SSG）
+3. **プライバシー侵害**
+   - **対策**: クライアントサイド処理
+   - **検証**: ネットワークモニタリング
 
-```bash
-npm run build
-# → out/ ディレクトリに静的ファイル生成
-```
+### CSP（Content Security Policy）
 
-### ホスティングオプション
-
-1. **GitHub Pages** - 無料、簡単
-2. **Vercel** - Next.js最適化
-3. **Netlify** - CDN、フォーム対応
-4. **Cloudflare Pages** - 高速、グローバル
-
-### CI/CD
-
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy
-on:
-  push:
-    branches: [main]
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-      - run: npm ci
-      - run: npm run build
-      - run: npm test # テスト追加後
-      - uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./out
+```typescript
+// next.config.js
+const securityHeaders = [
+  {
+    key: 'Content-Security-Policy',
+    value: "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline';",
+  },
+]
 ```
 
-## モニタリング
+## テスト設計
 
-### 推奨メトリクス
+### テストピラミッド
 
-1. **パフォーマンス**
-   - ページロード時間
-   - プロファイル解析時間
-   - 3D描画FPS
+```
+        /\
+       /E2E\         1-2個（主要フロー）
+      /------\
+     / Integration \   10-20個（機能統合）
+    /--------------\
+   /   Unit Tests   \  50-100個（関数単位）
+  /------------------\
+```
 
-2. **使用状況**
-   - プロファイル読み込み数
-   - 共有リンク生成数
-   - エクスポート実行数
+### テストケース例
 
-3. **エラー**
-   - 解析失敗率
-   - ブラウザエラー
-   - パフォーマンス警告
+#### ユニットテスト
 
-### ツール候補
+```typescript
+// lib/gamut-coverage.test.ts
+describe('calculateGamutArea', () => {
+  it('should calculate triangle area correctly', () => {
+    const points = [
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: 1 },
+    ]
+    expect(calculateGamutArea(points)).toBeCloseTo(0.5)
+  })
 
-- **Google Analytics 4** - 基本的なアクセス解析
-- **Sentry** - エラートラッキング
-- **Web Vitals** - Core Web Vitals測定
+  it('should handle empty array', () => {
+    expect(calculateGamutArea([])).toBe(0)
+  })
+})
+```
 
-## 技術的負債の管理
+#### 統合テスト
 
-### 既知の課題
+```typescript
+// integration/coverage-dashboard.test.tsx
+describe('GamutCoverageDashboard', () => {
+  it('should display all standard color spaces', () => {
+    render(<GamutCoverageDashboard colorPoints={mockColorPoints} />)
+    expect(screen.getByText('sRGB')).toBeInTheDocument()
+    expect(screen.getByText('Adobe RGB')).toBeInTheDocument()
+  })
+})
+```
 
-1. **TypeScript厳格化**
-   - `any`型の排除
-   - `strict`モードの有効化
+#### E2Eテスト
 
-2. **テストカバレッジ**
-   - ユニットテスト: 0%
-   - 統合テスト: 0%
-   - E2Eテスト: 0%
-
-3. **アクセシビリティ**
-   - WAI-ARIA対応不足
-   - キーボードナビゲーション未実装
-
-4. **国際化**
-   - ハードコードされた日本語テキスト
-   - i18n未実装
-
-### リファクタリング優先度
-
-**高**:
-
-- [ ] TypeScript厳格化
-- [ ] ユニットテスト追加
-
-**中**:
-
-- [ ] アクセシビリティ改善
-- [ ] パフォーマンス最適化
-
-**低**:
-
-- [ ] 国際化対応
-- [ ] プラグインシステム
+```typescript
+// e2e/basic-workflow.spec.ts
+test('should load and analyze profile', async ({ page }) => {
+  await page.goto('/')
+  await page.setInputFiles('#file-input', 'sample.icc')
+  await expect(page.getByText('色域カバレッジ分析')).toBeVisible()
+})
+```
 
 ---
 

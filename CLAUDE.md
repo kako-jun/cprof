@@ -51,17 +51,17 @@ cprof/
 
 ## 技術スタック
 
-| パッケージ         | 用途                   |
-| ------------------ | ---------------------- |
-| Next.js 15.5.6     | フレームワーク         |
-| React              | UI                     |
-| TypeScript         | 型安全性               |
-| Three.js           | 3Dレンダリング         |
-| @react-three/fiber | React + Three.js統合   |
-| @react-three/drei  | Three.jsユーティリティ |
-| Tailwind CSS       | スタイリング           |
-| ESLint + Prettier  | コード品質             |
-| Husky + lint-staged| Git hooks              |
+| パッケージ          | 用途                   |
+| ------------------- | ---------------------- |
+| Next.js 15.5.6      | フレームワーク         |
+| React               | UI                     |
+| TypeScript          | 型安全性               |
+| Three.js            | 3Dレンダリング         |
+| @react-three/fiber  | React + Three.js統合   |
+| @react-three/drei   | Three.jsユーティリティ |
+| Tailwind CSS        | スタイリング           |
+| ESLint + Prettier   | コード品質             |
+| Husky + lint-staged | Git hooks              |
 
 ## ビルド
 
@@ -168,3 +168,7 @@ interface ICCProfile {
 - **GitHub**: https://github.com/kako-jun/cprof
 - **Issues**: バグ報告・機能提案
 - **Discussions**: 質問・議論
+
+## デザインシステム
+
+UIの生成・修正時は `DESIGN.md` に定義されたデザインシステムに従うこと。定義外の色・フォント・スペーシングを勝手に使わない。
