@@ -46,8 +46,7 @@ export default function Home() {
     setIsLoading(true)
 
     try {
-      const basePath = process.env.NEXT_PUBLIC_BASE_PATH || ''
-      const response = await fetch(`${basePath}/profiles/${filename}`)
+      const response = await fetch(`/profiles/${filename}`)
       if (!response.ok) throw new Error(`Failed to load ${filename}`)
 
       const blob = await response.blob()
