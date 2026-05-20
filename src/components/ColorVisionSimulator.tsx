@@ -56,7 +56,9 @@ export default function ColorVisionSimulator({
     <div className="w-full">
       <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-4">
         Color Vision Simulation
-        {profileName && <span className="ml-3 text-label normal-case tracking-normal">{profileName}</span>}
+        {profileName && (
+          <span className="ml-3 text-label normal-case tracking-normal">{profileName}</span>
+        )}
       </p>
 
       {/* Vision type selector */}
@@ -86,10 +88,7 @@ export default function ColorVisionSimulator({
               <div className="flex items-stretch gap-3">
                 {/* Original swatch */}
                 <div className="flex-1">
-                  <div
-                    className="h-10 w-full"
-                    style={{ backgroundColor: color.original }}
-                  />
+                  <div className="h-10 w-full" style={{ backgroundColor: color.original }} />
                   <p className="text-[10px] font-mono text-dim mt-1">normal</p>
                   <p className="text-[10px] font-mono text-label">{color.original}</p>
                 </div>
@@ -98,10 +97,7 @@ export default function ColorVisionSimulator({
 
                 {/* Simulated swatch */}
                 <div className="flex-1">
-                  <div
-                    className="h-10 w-full"
-                    style={{ backgroundColor: color.simulated }}
-                  />
+                  <div className="h-10 w-full" style={{ backgroundColor: color.simulated }} />
                   <p className="text-[10px] font-mono text-dim mt-1">simulated</p>
                   <p className="text-[10px] font-mono text-label">{color.simulated}</p>
                 </div>
@@ -115,13 +111,20 @@ export default function ColorVisionSimulator({
       <div className="p-3 bg-[#0e0e0e] border border-[#1e1e1e]">
         <p className="text-[10px] font-mono text-dim leading-relaxed">
           {selectedVision === 'normal' && 'Normal trichromacy — L, M, S cones all functional.'}
-          {selectedVision === 'protanopia' && 'Protanopia (P-type) — L cone absent. Red-green confusion. ~1.5% of males (JP).'}
-          {selectedVision === 'deuteranopia' && 'Deuteranopia (D-type) — M cone absent. Red-green confusion. ~1.0% of males (JP).'}
-          {selectedVision === 'tritanopia' && 'Tritanopia (T-type) — S cone absent. Blue-yellow confusion. Very rare (<0.01%).'}
-          {selectedVision === 'protanomaly' && 'Protanomaly — reduced L cone sensitivity. Mild red discrimination loss.'}
-          {selectedVision === 'deuteranomaly' && 'Deuteranomaly — reduced M cone sensitivity. Most common color vision deficiency.'}
-          {selectedVision === 'tritanomaly' && 'Tritanomaly — reduced S cone sensitivity. Mild blue discrimination loss.'}
-          {selectedVision === 'achromatopsia' && 'Achromatopsia — all cones non-functional. World appears monochrome. Very rare.'}
+          {selectedVision === 'protanopia' &&
+            'Protanopia (P-type) — L cone absent. Red-green confusion. ~1.5% of males (JP).'}
+          {selectedVision === 'deuteranopia' &&
+            'Deuteranopia (D-type) — M cone absent. Red-green confusion. ~1.0% of males (JP).'}
+          {selectedVision === 'tritanopia' &&
+            'Tritanopia (T-type) — S cone absent. Blue-yellow confusion. Very rare (<0.01%).'}
+          {selectedVision === 'protanomaly' &&
+            'Protanomaly — reduced L cone sensitivity. Mild red discrimination loss.'}
+          {selectedVision === 'deuteranomaly' &&
+            'Deuteranomaly — reduced M cone sensitivity. Most common color vision deficiency.'}
+          {selectedVision === 'tritanomaly' &&
+            'Tritanomaly — reduced S cone sensitivity. Mild blue discrimination loss.'}
+          {selectedVision === 'achromatopsia' &&
+            'Achromatopsia — all cones non-functional. World appears monochrome. Very rare.'}
         </p>
       </div>
     </div>

@@ -1,0 +1,20 @@
+---
+import '@/styles/global.css'
+import App from '@/components/App'
+---
+
+<!doctype html>
+<html lang="ja" class="bg-[#0a0a0a]">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cprof - Color Profile 3D Viewer</title>
+    <meta
+      name="description"
+      content="ICC/WCS/OCIO color profiles visualizer with interactive 3D display"
+    />
+  </head>
+  <body class="antialiased bg-[#0a0a0a] text-[#c8c8c8]">
+    <App client:only="react" />
+  </body>
+</html>

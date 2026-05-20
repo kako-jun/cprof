@@ -43,7 +43,9 @@ export default function ExportButton({ profile, profileName }: ExportButtonProps
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
           <div className="bg-[#111] border border-[#2a2a2a] p-6 max-w-md w-full">
             <div className="flex justify-between items-start mb-4">
-              <p className="text-xs font-mono text-foreground uppercase tracking-widest">Export Data</p>
+              <p className="text-xs font-mono text-foreground uppercase tracking-widest">
+                Export Data
+              </p>
               <button
                 onClick={() => setIsOpen(false)}
                 className="text-dim hover:text-foreground font-mono text-sm transition-colors"
@@ -52,12 +54,12 @@ export default function ExportButton({ profile, profileName }: ExportButtonProps
               </button>
             </div>
 
-            {profileName && (
-              <p className="text-xs font-mono text-label mb-4">{profileName}</p>
-            )}
+            {profileName && <p className="text-xs font-mono text-label mb-4">{profileName}</p>}
 
             <div className="mb-5">
-              <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-3">format</p>
+              <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-3">
+                format
+              </p>
               <div className="space-y-1">
                 {formats.map((format) => (
                   <label

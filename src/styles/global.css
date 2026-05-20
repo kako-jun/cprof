@@ -18,7 +18,8 @@
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, 'Courier New', monospace;
+  font-family:
+    'JetBrains Mono', 'Fira Code', 'Cascadia Code', ui-monospace, 'Courier New', monospace;
 }
 
 /* Flat, no-border-radius scrollbar */

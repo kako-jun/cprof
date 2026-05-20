@@ -26,13 +26,16 @@ export default function GamutCoverageDashboard({
     <div className="w-full">
       <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-4">
         Gamut Coverage
-        {profileName && <span className="ml-3 text-label normal-case tracking-normal">{profileName}</span>}
+        {profileName && (
+          <span className="ml-3 text-label normal-case tracking-normal">{profileName}</span>
+        )}
       </p>
 
       {usingSRGBDefaults && (
         <div className="mb-4 p-3 bg-[#1a1500] border border-[#332a00]">
           <p className="text-[10px] font-mono text-[#aa8800] leading-relaxed">
-            This profile uses a non-RGB color space. Coverage values below reflect sRGB defaults, not the actual profile gamut.
+            This profile uses a non-RGB color space. Coverage values below reflect sRGB defaults,
+            not the actual profile gamut.
           </p>
         </div>
       )}
@@ -61,7 +64,9 @@ export default function GamutCoverageDashboard({
                 <span className="text-xs font-mono text-foreground tabular-nums">
                   {percentage.toFixed(1)}%
                   {isWider && (
-                    <span className="text-[10px] text-dim ml-1">+{(percentage - 100).toFixed(1)}</span>
+                    <span className="text-[10px] text-dim ml-1">
+                      +{(percentage - 100).toFixed(1)}
+                    </span>
                   )}
                 </span>
               </div>

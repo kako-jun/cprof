@@ -117,7 +117,8 @@ function isInsideEdge(
 ): boolean {
   return (
     (edgeEnd.x - edgeStart.x) * (point.y - edgeStart.y) -
-    (edgeEnd.y - edgeStart.y) * (point.x - edgeStart.x) >= 0
+      (edgeEnd.y - edgeStart.y) * (point.x - edgeStart.x) >=
+    0
   )
 }
 
@@ -130,13 +131,11 @@ function lineIntersection(
   p3: { x: number; y: number },
   p4: { x: number; y: number }
 ): { x: number; y: number } | null {
-  const denom =
-    (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x)
+  const denom = (p1.x - p2.x) * (p3.y - p4.y) - (p1.y - p2.y) * (p3.x - p4.x)
 
   if (Math.abs(denom) < 1e-12) return null
 
-  const t =
-    ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) / denom
+  const t = ((p1.x - p3.x) * (p3.y - p4.y) - (p1.y - p3.y) * (p3.x - p4.x)) / denom
 
   return {
     x: p1.x + t * (p2.x - p1.x),

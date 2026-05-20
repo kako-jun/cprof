@@ -60,7 +60,9 @@ export default function ShareButton({ file, profileName }: ShareButtonProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70 p-4">
           <div className="bg-[#111] border border-[#2a2a2a] p-6 max-w-2xl w-full">
             <div className="flex justify-between items-start mb-4">
-              <p className="text-xs font-mono text-foreground uppercase tracking-widest">Share Profile</p>
+              <p className="text-xs font-mono text-foreground uppercase tracking-widest">
+                Share Profile
+              </p>
               <button
                 onClick={handleClose}
                 className="text-dim hover:text-foreground font-mono text-sm transition-colors"
@@ -69,12 +71,12 @@ export default function ShareButton({ file, profileName }: ShareButtonProps) {
               </button>
             </div>
 
-            {profileName && (
-              <p className="text-xs font-mono text-label mb-4">{profileName}</p>
-            )}
+            {profileName && <p className="text-xs font-mono text-label mb-4">{profileName}</p>}
 
             <div className="mb-4">
-              <p className="text-[10px] font-mono text-dim mb-2 uppercase tracking-widest">share url</p>
+              <p className="text-[10px] font-mono text-dim mb-2 uppercase tracking-widest">
+                share url
+              </p>
               <div className="flex gap-2">
                 <input
                   type="text"

@@ -140,7 +140,7 @@ function ColorGamutSolid({ points, opacity = 0.8 }: { points: ColorPoint[]; opac
     geo.computeVertexNormals()
 
     return geo
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points])
 
   // ジオメトリのメモリを明示的に解放
@@ -249,7 +249,7 @@ function ColorGamutFullSolid({
     geo.computeVertexNormals()
 
     return geo
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points])
 
   // ジオメトリのメモリを明示的に解放
@@ -358,7 +358,7 @@ function ColorGamut({
         [magenta.x, magenta.y, magenta.z],
       ],
     ]
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points])
 
   return (
@@ -547,9 +547,7 @@ export default function ColorSpaceViewer({
       {profileName && (
         <div className="absolute top-3 left-3 bg-black bg-opacity-60 px-2.5 py-1.5 text-xs font-mono space-y-0.5">
           <div className="text-[#aaa]">{profileName}</div>
-          {profileName2 && compareMode && (
-            <div className="text-[#777]">B: {profileName2}</div>
-          )}
+          {profileName2 && compareMode && <div className="text-[#777]">B: {profileName2}</div>}
         </div>
       )}
 

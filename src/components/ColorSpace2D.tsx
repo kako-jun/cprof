@@ -87,7 +87,7 @@ const SPECTRAL_LOCUS = [
 function xyzToLab(x: number, y: number, z: number): { L: number; a: number; b: number } {
   // D50白色点 (ICC PCS標準)
   const Xn = 0.9642
-  const Yn = 1.0000
+  const Yn = 1.0
   const Zn = 0.8251
 
   const f = (t: number) => {

@@ -1,23 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import dynamic from 'next/dynamic'
 import { parseICCProfile, type ICCProfile } from '@/lib/icc-parser'
 import ColorSpace2D from '@/components/ColorSpace2D'
+import ColorSpaceViewer from '@/components/ColorSpaceViewer'
 import GamutCoverageDashboard from '@/components/GamutCoverageDashboard'
 import ShareButton from '@/components/ShareButton'
 import ExportButton from '@/components/ExportButton'
 import ColorVisionSimulator from '@/components/ColorVisionSimulator'
 import { extractProfileFromURL, base64ToFile } from '@/lib/profile-sharing'
-
-const ColorSpaceViewer = dynamic(() => import('@/components/ColorSpaceViewer'), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center text-label text-xs tracking-widest uppercase">
-      loading...
-    </div>
-  ),
-})
 
 const SAMPLE_PROFILES = [
   { name: 'sRGB', file: 'sRGB-v4.icc', description: 'Web standard' },
@@ -27,7 +18,7 @@ const SAMPLE_PROFILES = [
   { name: 'ProPhoto RGB', file: 'ProPhoto-v4.icc', description: 'Ultra wide (photo editing)' },
 ]
 
-export default function Home() {
+export default function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [profile, setProfile] = useState<ICCProfile | null>(null)
   const [selectedFile2, setSelectedFile2] = useState<File | null>(null)
@@ -162,7 +153,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
-
       {/* Top bar — wordmark + status */}
       <header className="flex items-center justify-between px-5 py-3 border-b border-[#1e1e1e]">
         <div className="flex items-center gap-4">
@@ -180,10 +170,8 @@ export default function Home() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-
         {/* LEFT SIDEBAR — controls */}
         <aside className="w-64 shrink-0 bg-[#0e0e0e] border-r border-[#1e1e1e] flex flex-col overflow-y-auto">
-
           {/* Drop zone */}
           <div
             className="mx-3 mt-3 border border-dashed border-[#2e2e2e] p-4 text-center cursor-pointer hover:border-[#444] transition-colors"
@@ -199,7 +187,8 @@ export default function Home() {
             />
             <label htmlFor="file-input" className="cursor-pointer block">
               <p className="text-xs text-label font-mono leading-relaxed">
-                drop .icc / .icm<br />
+                drop .icc / .icm
+                <br />
                 or click to open
               </p>
             </label>
@@ -258,7 +247,9 @@ export default function Home() {
                 <div className="mb-3">
                   <div className="flex justify-between mb-1">
                     <span className="text-[10px] font-mono text-dim">opacity</span>
-                    <span className="text-[10px] font-mono text-label">{Math.round(solidOpacity * 100)}%</span>
+                    <span className="text-[10px] font-mono text-label">
+                      {Math.round(solidOpacity * 100)}%
+                    </span>
                   </div>
                   <input
                     type="range"
@@ -291,9 +282,13 @@ export default function Home() {
           {/* Profile 1 info */}
           {selectedFile && (
             <div className="px-3 mt-4">
-              <p className="text-[10px] text-dim font-mono uppercase tracking-widest mb-2">Profile A</p>
+              <p className="text-[10px] text-dim font-mono uppercase tracking-widest mb-2">
+                Profile A
+              </p>
               <p className="text-xs font-mono text-foreground truncate">{selectedFile.name}</p>
-              <p className="text-[10px] font-mono text-dim mt-0.5">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+              <p className="text-[10px] font-mono text-dim mt-0.5">
+                {(selectedFile.size / 1024).toFixed(1)} KB
+              </p>
 
               {profile && (
                 <div className="mt-3 space-y-1">
@@ -306,18 +301,24 @@ export default function Home() {
                   ].map(([k, v]) => (
                     <div key={k} className="flex justify-between gap-2">
                       <span className="text-[10px] font-mono text-dim">{k}</span>
-                      <span className="text-[10px] font-mono text-label truncate max-w-[100px] text-right">{v}</span>
+                      <span className="text-[10px] font-mono text-label truncate max-w-[100px] text-right">
+                        {v}
+                      </span>
                     </div>
                   ))}
                   {profile.description && (
-                    <p className="text-[10px] font-mono text-dim mt-1 truncate" title={profile.description}>
+                    <p
+                      className="text-[10px] font-mono text-dim mt-1 truncate"
+                      title={profile.description}
+                    >
                       {profile.description}
                     </p>
                   )}
                   {profile.usingSRGBDefaults && (
                     <div className="mt-2 p-2 bg-[#1a1500] border border-[#332a00]">
                       <p className="text-[10px] font-mono text-[#aa8800] leading-relaxed">
-                        Non-RGB profile ({profile.header.colorSpace}). Gamut data shown as sRGB defaults — values are not from the actual profile.
+                        Non-RGB profile ({profile.header.colorSpace}). Gamut data shown as sRGB
+                        defaults — values are not from the actual profile.
                       </p>
                     </div>
                   )}
@@ -326,8 +327,14 @@ export default function Home() {
 
               {!compareMode && profile && (
                 <div className="mt-3 flex flex-col gap-1.5">
-                  <ShareButton file={selectedFile} profileName={profile.description || selectedFile.name} />
-                  <ExportButton profile={profile} profileName={profile.description || selectedFile.name} />
+                  <ShareButton
+                    file={selectedFile}
+                    profileName={profile.description || selectedFile.name}
+                  />
+                  <ExportButton
+                    profile={profile}
+                    profileName={profile.description || selectedFile.name}
+                  />
                   <label
                     htmlFor="file-input-2"
                     className="cursor-pointer px-2 py-1.5 text-xs font-mono text-label border border-[#2e2e2e] hover:border-[#444] hover:text-foreground transition-colors text-center"
@@ -351,9 +358,13 @@ export default function Home() {
             <>
               <div className="border-t border-[#1e1e1e] mx-3 mt-4" />
               <div className="px-3 mt-4">
-                <p className="text-[10px] text-dim font-mono uppercase tracking-widest mb-2">Profile B</p>
+                <p className="text-[10px] text-dim font-mono uppercase tracking-widest mb-2">
+                  Profile B
+                </p>
                 <p className="text-xs font-mono text-foreground truncate">{selectedFile2.name}</p>
-                <p className="text-[10px] font-mono text-dim mt-0.5">{(selectedFile2.size / 1024).toFixed(1)} KB</p>
+                <p className="text-[10px] font-mono text-dim mt-0.5">
+                  {(selectedFile2.size / 1024).toFixed(1)} KB
+                </p>
 
                 {profile2 && (
                   <div className="mt-3 space-y-1">
@@ -366,13 +377,16 @@ export default function Home() {
                     ].map(([k, v]) => (
                       <div key={k} className="flex justify-between gap-2">
                         <span className="text-[10px] font-mono text-dim">{k}</span>
-                        <span className="text-[10px] font-mono text-label truncate max-w-[100px] text-right">{v}</span>
+                        <span className="text-[10px] font-mono text-label truncate max-w-[100px] text-right">
+                          {v}
+                        </span>
                       </div>
                     ))}
                     {profile2.usingSRGBDefaults && (
                       <div className="mt-2 p-2 bg-[#1a1500] border border-[#332a00]">
                         <p className="text-[10px] font-mono text-[#aa8800] leading-relaxed">
-                          Non-RGB profile ({profile2.header.colorSpace}). Gamut data shown as sRGB defaults — values are not from the actual profile.
+                          Non-RGB profile ({profile2.header.colorSpace}). Gamut data shown as sRGB
+                          defaults — values are not from the actual profile.
                         </p>
                       </div>
                     )}
@@ -382,8 +396,14 @@ export default function Home() {
                 <div className="mt-3 flex flex-col gap-1.5">
                   {profile2 && (
                     <>
-                      <ShareButton file={selectedFile2} profileName={profile2.description || selectedFile2.name} />
-                      <ExportButton profile={profile2} profileName={profile2.description || selectedFile2.name} />
+                      <ShareButton
+                        file={selectedFile2}
+                        profileName={profile2.description || selectedFile2.name}
+                      />
+                      <ExportButton
+                        profile={profile2}
+                        profileName={profile2.description || selectedFile2.name}
+                      />
                     </>
                   )}
                   <button
@@ -410,7 +430,6 @@ export default function Home() {
 
         {/* MAIN — 3D canvas fills everything */}
         <main className="flex-1 flex flex-col overflow-hidden">
-
           {/* 3D viewer — dominates the screen */}
           <div className="flex-1 bg-[#050505] relative min-h-[500px]">
             {isLoading || isLoading2 ? (
@@ -429,8 +448,12 @@ export default function Home() {
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center gap-3">
-                <p className="text-xs font-mono text-dim tracking-widest uppercase">no profile loaded</p>
-                <p className="text-[10px] font-mono text-[#333]">drop an .icc file or select a preset</p>
+                <p className="text-xs font-mono text-dim tracking-widest uppercase">
+                  no profile loaded
+                </p>
+                <p className="text-[10px] font-mono text-[#333]">
+                  drop an .icc file or select a preset
+                </p>
               </div>
             )}
           </div>
@@ -439,7 +462,6 @@ export default function Home() {
           {profile && (
             <div className="bg-[#0a0a0a] border-t border-[#1e1e1e] overflow-y-auto max-h-[50vh]">
               <div className="p-5 space-y-8">
-
                 {/* Gamut coverage */}
                 <GamutCoverageDashboard
                   colorPoints={profile.colorPoints}
@@ -464,7 +486,9 @@ export default function Home() {
                 {/* 2D projections */}
                 {show2D && (
                   <div>
-                    <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-4">2D Projections</p>
+                    <p className="text-[10px] font-mono text-dim uppercase tracking-widest mb-4">
+                      2D Projections
+                    </p>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {(['xy', 'lab', 'lch', 'rgb-xy', 'rgb-xz', 'rgb-yz'] as const).map((t) => (
                         <ColorSpace2D
